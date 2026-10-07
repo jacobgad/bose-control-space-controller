@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project version="5.900" createdBy="5.14.2.7" key="0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c">
+    <ProjectInfo>
+        <Password md5="d41d8cd98f00b204e9800998ecf8427e" />
+    </ProjectInfo>
+    <Nodes>
+        <Node className="Bose.Creator.Nodes.ESP" typeNumber="1" inPorts="0" outPorts="0">
+            <Properties>
+                <Property name="title" value="ESP-880" />
+                <Property name="label" value="ESP Main" />
+                <Property name="nodeID" value="100001" />
+                <Property name="ipAddress" value="192.0.2.10" />
+                <Property name="serialPortNumber" value="10055" max="10099" step="1" min="10003" />
+                <Property name="isMainESP" value="True" />
+                <Property name="firmwareViersion" value="v4.100" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.ESP" typeNumber="1" inPorts="0" outPorts="0">
+            <Properties>
+                <Property name="title" value="ESP-1600" />
+                <Property name="label" value="ESP Annex" />
+                <Property name="nodeID" value="100002" />
+                <Property name="ipAddress" value="192.0.2.11" />
+                <Property name="serialPortNumber" value="10055" max="10099" step="1" min="10003" />
+                <Property name="isMainESP" value="False" />
+                <Property name="firmwareViersion" value="v4.100" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Gonzo" typeNumber="3" inPorts="0" outPorts="0">
+            <Properties>
+                <Property name="title" value="PM8500N" />
+                <Property name="label" value="Amp Main" />
+                <Property name="nodeID" value="100003" />
+                <Property name="ipAddress" value="192.0.2.20" />
+                <Property name="serialPortNumber" value="10055" max="10099" step="1" min="10003" />
+                <Property name="firmwareViersion" value="v4.200" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Gonzo" typeNumber="3" inPorts="0" outPorts="0">
+            <Properties>
+                <Property name="title" value="PM4500N" />
+                <Property name="label" value="Amp Annex" />
+                <Property name="nodeID" value="100004" />
+                <Property name="ipAddress" value="192.0.2.21" />
+                <Property name="serialPortNumber" value="10056" max="10099" step="1" min="10003" />
+                <Property name="firmwareViersion" value="v4.200" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.CC64" typeNumber="4" inPorts="0" outPorts="0">
+            <Properties>
+                <Property name="title" value="CC-64" />
+                <Property name="label" value="Wall Panel" />
+                <Property name="nodeID" value="100005" />
+                <Property name="ipAddress" value="192.0.2.30" />
+            </Properties>
+        </Node>
+
+        <Node className="Bose.Creator.Nodes.Gain" typeNumber="0" inPorts="1" outPorts="1" espNodeID="100001" logicVisible="False">
+            <Properties>
+                <Property name="title" value="Gain" />
+                <Property name="label" value="Hall" />
+                <Property name="nodeID" value="200001" />
+                <Property name="level" value="-2.0" max="12" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Gain" typeNumber="0" inPorts="1" outPorts="1" espNodeID="100001" logicVisible="False">
+            <Properties>
+                <Property name="title" value="Gain" />
+                <Property name="label" value="Foyer" />
+                <Property name="nodeID" value="200002" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Gain" typeNumber="0" inPorts="1" outPorts="1" espNodeID="100001" logicVisible="False">
+            <Properties>
+                <Property name="title" value="Gain" />
+                <Property name="label" value="Stage" />
+                <Property name="nodeID" value="200003" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Gain" typeNumber="0" inPorts="1" outPorts="1" espNodeID="100002" logicVisible="False">
+            <Properties>
+                <Property name="title" value="Gain" />
+                <Property name="label" value="Annex" />
+                <Property name="nodeID" value="200004" />
+                <Property name="level" value="-6.0" max="12" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+
+        <Node className="Bose.Creator.Nodes.Input" typeNumber="2" inPorts="0" outPorts="1" espNodeID="100001" slotIndex="0" pinIndex="0" portIndex="0" cardType="4ch Mic/Line Input">
+            <Properties>
+                <Property name="title" value="Input 1" />
+                <Property name="label" value="Mic 1" />
+                <Property name="nodeID" value="300001" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="phantomPwr" value="True" />
+                <Property name="mute" value="False" />
+                <Property name="gain" value="44dB" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Input" typeNumber="2" inPorts="0" outPorts="1" espNodeID="100001" slotIndex="0" pinIndex="1" portIndex="1" cardType="4ch Mic/Line Input">
+            <Properties>
+                <Property name="title" value="Input 2" />
+                <Property name="label" value="Mic 2" />
+                <Property name="nodeID" value="300002" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="phantomPwr" value="True" />
+                <Property name="mute" value="False" />
+                <Property name="gain" value="44dB" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Input" typeNumber="2" inPorts="0" outPorts="1" espNodeID="100001" slotIndex="0" pinIndex="2" portIndex="2" cardType="4ch Mic/Line Input">
+            <Properties>
+                <Property name="title" value="Input 3" />
+                <Property name="label" value="Playback" />
+                <Property name="nodeID" value="300003" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="phantomPwr" value="False" />
+                <Property name="mute" value="False" />
+                <Property name="gain" value="0dB" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Input" typeNumber="2" inPorts="0" outPorts="1" espNodeID="100002" slotIndex="0" pinIndex="0" portIndex="0" cardType="4ch Mic/Line Input">
+            <Properties>
+                <Property name="title" value="Input 1" />
+                <Property name="label" value="Annex Mic" />
+                <Property name="nodeID" value="300004" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="phantomPwr" value="True" />
+                <Property name="mute" value="False" />
+                <Property name="gain" value="44dB" />
+            </Properties>
+        </Node>
+
+        <Node className="Bose.Creator.Nodes.Output" typeNumber="2" inPorts="1" outPorts="0" espNodeID="100001" slotIndex="1" pinIndex="0" portIndex="0" cardType="4ch EDR Output">
+            <Properties>
+                <Property name="title" value="Output 1" />
+                <Property name="label" value="To Amp" />
+                <Property name="nodeID" value="400001" />
+                <Property name="level" value="0.0" max="12" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Mixer" typeNumber="0" inPorts="4" outPorts="2" espNodeID="100001" logicVisible="False">
+            <Properties>
+                <Property name="title" value="Std Mixer" />
+                <Property name="label" value="Matrix" />
+                <Property name="nodeID" value="400002" />
+            </Properties>
+        </Node>
+
+        <Node className="Bose.Creator.Nodes.Output" typeNumber="1" inPorts="1" outPorts="0" gonzoNodeID="100003" slotIndex="1" pinIndex="0" portIndex="0" cardType="4x4 Mic/Line">
+            <Properties>
+                <Property name="title" value="Amp Output" />
+                <Property name="label" value="Hall L R" />
+                <Property name="nodeID" value="500001" />
+                <Property name="outputConfig" value="Mono [LO-Z]" />
+                <Property name="level" value="-16.0" max="0" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Output" typeNumber="1" inPorts="1" outPorts="0" gonzoNodeID="100003" slotIndex="1" pinIndex="1" portIndex="1" cardType="4x4 Mic/Line">
+            <Properties>
+                <Property name="title" value="Amp Output" />
+                <Property name="label" value="Foyer" />
+                <Property name="nodeID" value="500002" />
+                <Property name="outputConfig" value="Mono [LO-Z]" />
+                <Property name="level" value="-16.0" max="0" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Output" typeNumber="1" inPorts="1" outPorts="0" gonzoNodeID="100004" slotIndex="1" pinIndex="0" portIndex="0" cardType="4x4 Mic/Line">
+            <Properties>
+                <Property name="title" value="Amp Output" />
+                <Property name="label" value="Annex Spkrs" />
+                <Property name="nodeID" value="500003" />
+                <Property name="outputConfig" value="Mono [LO-Z]" />
+                <Property name="level" value="-16.0" max="0" step="0.5" min="-60.5" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+        <Node className="Bose.Creator.Nodes.Input" typeNumber="1" inPorts="0" outPorts="1" gonzoNodeID="100003" slotIndex="0" pinIndex="0" portIndex="0" cardType="4x4 Mic/Line">
+            <Properties>
+                <Property name="title" value="Analog In" />
+                <Property name="label" value="From ESP" />
+                <Property name="nodeID" value="600001" />
+                <Property name="gain" value="+12dBu" />
+                <Property name="mute" value="False" />
+            </Properties>
+        </Node>
+    </Nodes>
+    <ParameterSets>
+        <ParameterSet id="1">
+            <Properties>
+                <Property name="title" value="Param. Set" />
+                <Property name="label" value="Service" />
+                <Property name="index" value="1" />
+                <Property name="nodeID" value="700001" />
+            </Properties>
+        </ParameterSet>
+        <ParameterSet id="2">
+            <Properties>
+                <Property name="title" value="Param. Set" />
+                <Property name="label" value="Concert" />
+                <Property name="index" value="2" />
+                <Property name="nodeID" value="700002" />
+            </Properties>
+        </ParameterSet>
+        <ParameterSet id="3">
+            <Properties>
+                <Property name="title" value="Param. Set" />
+                <Property name="label" value="Rehearsal" />
+                <Property name="index" value="3" />
+                <Property name="nodeID" value="700003" />
+            </Properties>
+        </ParameterSet>
+        <ParameterSet id="4">
+            <Properties>
+                <Property name="title" value="Param. Set" />
+                <Property name="label" value="Unused" />
+                <Property name="index" value="4" />
+                <Property name="nodeID" value="700004" />
+            </Properties>
+        </ParameterSet>
+    </ParameterSets>
+    <Assignment>
+        <Node id="100005">
+            <Assign prop="selectorControl" linkType="SNAPSHOT" targetType="ParameterSet" targetID="1" />
+        </Node>
+        <ParameterSet id="1">
+            <Assign linkType="SNAPSHOT" targetType="Property" targetID="200001" targetProp="level" targetValue="-2.0" />
+            <Assign linkType="SNAPSHOT" targetType="Property" targetID="200002" targetProp="mute" targetValue="True" />
+        </ParameterSet>
+        <ParameterSet id="2">
+            <Assign linkType="SNAPSHOT" targetType="Property" targetID="200001" targetProp="level" targetValue="3.0" />
+        </ParameterSet>
+        <ParameterSet id="3">
+            <Assign linkType="SNAPSHOT" targetType="Property" targetID="200001" targetProp="level" targetValue="-10.0" />
+        </ParameterSet>
+        <ParameterSet id="4" />
+    </Assignment>
+</Project>

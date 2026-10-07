@@ -1,0 +1,5 @@
+/docs/
+.DS_Store
+/bose-controlspace-controller/bose-controlspace-controller
+*.csp
+*.cpz
