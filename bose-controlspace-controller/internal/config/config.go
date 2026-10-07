@@ -17,21 +17,10 @@ import (
 	"time"
 )
 
-// Mode selects what the binary does at startup.
-type Mode string
-
-// Modes.
-const (
-	ModeBridge  Mode = "bridge"
-	ModeCapture Mode = "capture"
-)
-
 // Options are the validated add-on options.
 type Options struct {
 	PollInterval  time.Duration
 	WriteDebounce time.Duration
-	Mode          Mode
-	CaptureDir    string
 	LogLevel      slog.Level
 }
 
@@ -78,14 +67,11 @@ type Config struct {
 type rawOptions struct {
 	PollIntervalMs  *int    `json:"poll_interval_ms"`
 	WriteDebounceMs *int    `json:"write_debounce_ms"`
-	Mode            *string `json:"mode"`
-	CaptureDir      *string `json:"capture_dir"`
 	LogLevel        *string `json:"log_level"`
 }
 
 // Defaults applied when an option is absent.
 const (
-	DefaultCaptureDir    = "/share/bose/capture"
 	DefaultPollInterval  = 2000 * time.Millisecond
 	DefaultWriteDebounce = 300 * time.Millisecond
 )
@@ -99,8 +85,6 @@ func ParseOptions(data []byte) (Options, error) {
 	opts := Options{
 		PollInterval:  DefaultPollInterval,
 		WriteDebounce: DefaultWriteDebounce,
-		Mode:          ModeBridge,
-		CaptureDir:    DefaultCaptureDir,
 		LogLevel:      slog.LevelInfo,
 	}
 	if raw.PollIntervalMs != nil {
@@ -114,17 +98,6 @@ func ParseOptions(data []byte) (Options, error) {
 			return Options{}, errors.New("write_debounce_ms must be between 0 and 5000")
 		}
 		opts.WriteDebounce = time.Duration(*raw.WriteDebounceMs) * time.Millisecond
-	}
-	if raw.Mode != nil {
-		switch Mode(*raw.Mode) {
-		case ModeBridge, ModeCapture:
-			opts.Mode = Mode(*raw.Mode)
-		default:
-			return Options{}, errors.New("mode must be bridge or capture")
-		}
-	}
-	if raw.CaptureDir != nil && strings.TrimSpace(*raw.CaptureDir) != "" {
-		opts.CaptureDir = strings.TrimSpace(*raw.CaptureDir)
 	}
 	if raw.LogLevel != nil {
 		if err := opts.LogLevel.UnmarshalText([]byte(*raw.LogLevel)); err != nil {
@@ -191,7 +164,6 @@ func MQTTFromSupervisor(ctx context.Context, token string, client *http.Client) 
 }
 
 // Load reads options.json and resolves MQTT settings, preferring MQTT_HOST when set.
-// Capture mode needs no broker, so MQTT resolution is skipped for it.
 func Load(ctx context.Context) (Config, error) {
 	optionsPath := envOr("BOSE_OPTIONS_PATH", "/data/options.json")
 	data, err := os.ReadFile(optionsPath) //nolint:gosec // path is fixed by the add-on or set by the operator's own environment
@@ -208,9 +180,6 @@ func Load(ctx context.Context) (Config, error) {
 		DesignDir:    envOr("BOSE_DESIGN_DIR", "/data/design"),
 		WebAddr:      envOr("BOSE_WEB_ADDR", ":8099"),
 		IngressOnly:  os.Getenv("SUPERVISOR_TOKEN") != "",
-	}
-	if opts.Mode == ModeCapture {
-		return cfg, nil
 	}
 	switch {
 	case os.Getenv("MQTT_HOST") != "":

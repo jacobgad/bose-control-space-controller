@@ -24,7 +24,6 @@ type FakeDevice struct {
 	silent       bool
 	// ACKTerminator is appended after the ACK byte; the protocol leaves this unspecified.
 	ACKTerminator string
-	Subscriptions bool
 	OnRecall      func(d *FakeDevice, n int)
 }
 
@@ -152,11 +151,6 @@ func (d *FakeDevice) handle(cmd string) string {
 	switch cmd {
 	case csp.GetParameterSet:
 		return fmt.Sprintf("S %x\r", d.ParameterSet())
-	case csp.ProbeSubscription:
-		if d.Subscriptions {
-			return "SUB yes\r"
-		}
-		return ""
 	}
 	if m := ssPattern.FindStringSubmatch(cmd); m != nil {
 		n, _ := strconv.ParseInt(m[1], 16, 32)

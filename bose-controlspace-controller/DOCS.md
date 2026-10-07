@@ -38,8 +38,6 @@ Until a design has been uploaded the add-on runs idle with the page available an
 ```yaml
 poll_interval_ms: 2000
 write_debounce_ms: 300
-mode: bridge
-capture_dir: /share/bose/capture
 log_level: info
 ```
 
@@ -47,8 +45,6 @@ log_level: info
 | --- | --- | --- |
 | `poll_interval_ms` | `2000` | How often every exposed parameter is re-read from the devices. 500–600000. |
 | `write_debounce_ms` | `300` | A level change from Home Assistant is sent once no newer value for that entity has arrived for this long. `0` disables. Mutes and buttons are never delayed. |
-| `mode` | `bridge` | `bridge` runs normally. `capture` records raw protocol transcripts for every device and then idles (see below). |
-| `capture_dir` | `/share/bose/capture` | Where capture transcripts are written. |
 | `log_level` | `info` | `debug` / `info` / `warn` / `error` |
 
 ## Devices and entities
@@ -100,19 +96,6 @@ Prefix `bose/`. `<id>` is the six-digit Designer node ID.
 
 Discovery configs under `homeassistant/<component>/bose_<id>/<object>/config`; device identifier `bose:<id>`; unique IDs `bose_<id>_<object>`. State is retained, commands are not, and retained messages are never acted on.
 
-## Capture mode
-
-Set `mode: capture`, restart, and the add-on connects to each unit in turn, probes subscription support (`SUB`), reads every exposed parameter, re-sends the first block's current level and mute unchanged (to record how the device acknowledges), and writes:
-
-```text
-/share/bose/capture/<timestamp>/
-  summary.json
-  ESP_Main-100001.log
-  …
-```
-
-Each `.log` line is `<time> > <command sent>` or `<time> < <hex bytes>  |<printable>|`. The add-on then idles; set `mode: bridge` and restart. Capture is read-only apart from the unchanged write-back. Capture uses the design uploaded in bridge mode; upload one first.
-
 ## Troubleshooting
 
 | Symptom | What to check |
@@ -127,7 +110,7 @@ Each `.log` line is `<time> > <command sent>` or `<time> < <hex bytes>  |<printa
 
 ## Limitations
 
-- Polling only; subscriptions (`SUB`) are probed in capture mode but not used yet
+- Polling only; the protocol's subscription feature is not used
 - Exposes Gain, ESP Input and Amp Output blocks and populated parameter sets; no ESP outputs, mixers, EQ, ControlSpace Groups, amp standby, metering or source selection
 - One design at a time
 - The device's stored design is not retrieved automatically (Designer protocol on port 10001 is undocumented)

@@ -5,16 +5,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/jacobgad/bose-control-space-controller/internal/capture"
 	"github.com/jacobgad/bose-control-space-controller/internal/config"
-	"github.com/jacobgad/bose-control-space-controller/internal/design"
 	"github.com/jacobgad/bose-control-space-controller/internal/webui"
 )
 
@@ -42,30 +39,8 @@ func run() error {
 		return err
 	}
 	log := newLogger(cfg.Options.LogLevel)
-	log.Info("starting", "version", version, "mode", cfg.Options.Mode, "design_dir", cfg.DesignDir)
-
-	if cfg.Options.Mode == config.ModeCapture {
-		return runCapture(ctx, cfg, log)
-	}
+	log.Info("starting", "version", version, "design_dir", cfg.DesignDir)
 	return runBridge(ctx, cfg, log)
-}
-
-func runCapture(ctx context.Context, cfg config.Config, log *slog.Logger) error {
-	d, file, err := design.Store{Dir: cfg.DesignDir}.Load()
-	if err != nil {
-		log.Error("design_unavailable", "error", err.Error(), "detail", "upload a .csp on the add-on page in bridge mode first")
-		return err
-	}
-	log.Info("design_loaded", "file", file, "devices", len(d.Devices))
-	results, err := capture.Run(ctx, capture.Options{Design: d, Dir: cfg.Options.CaptureDir, Timeout: 3 * time.Second, Log: log})
-	if err != nil {
-		log.Error("capture_failed", "error", err.Error())
-		return err
-	}
-	fmt.Print(capture.Summarize(results))
-	log.Info("capture_finished", "detail", "switch mode back to bridge and restart the add-on")
-	<-ctx.Done()
-	return nil
 }
 
 func runBridge(ctx context.Context, cfg config.Config, log *slog.Logger) error {

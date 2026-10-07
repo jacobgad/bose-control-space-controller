@@ -159,32 +159,6 @@ func (c *Client) RecallParameterSet(ctx context.Context, n int) error {
 	return c.send(ctx, RecallParameterSet(n))
 }
 
-// Raw sends an arbitrary command and returns the first response within the timeout,
-// or an empty response when the device stays silent. Used by capture mode.
-func (c *Client) Raw(ctx context.Context, command string) (Response, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if err := c.ensureLocked(ctx); err != nil {
-		return Response{}, err
-	}
-	if err := c.conn.Write(ctx, command); err != nil {
-		c.dropLocked(err)
-		return Response{}, err
-	}
-	waitCtx, cancel := context.WithTimeout(ctx, c.opts.Timeout)
-	defer cancel()
-	r, err := c.conn.Next(waitCtx)
-	switch {
-	case err == nil:
-		return r, nil
-	case errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil:
-		return Response{}, nil
-	default:
-		c.dropLocked(err)
-		return Response{}, err
-	}
-}
-
 func (c *Client) send(ctx context.Context, command string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -195,6 +169,7 @@ func (c *Client) send(ctx context.Context, command string) error {
 		c.dropLocked(err)
 		return err
 	}
+	c.opts.Log.Debug("device_sent", "command", command)
 	return nil
 }
 
@@ -210,6 +185,7 @@ func (c *Client) request(ctx context.Context, command string, want func(Response
 		c.dropLocked(err)
 		return Response{}, err
 	}
+	c.opts.Log.Debug("device_sent", "command", command)
 	waitCtx, cancel := context.WithTimeout(ctx, c.opts.Timeout)
 	defer cancel()
 	for {
@@ -221,9 +197,10 @@ func (c *Client) request(ctx context.Context, command string, want func(Response
 			c.dropLocked(err)
 			return Response{}, err
 		}
+		c.opts.Log.Debug("device_received", "command", command, "response", r.Raw)
 		if want(r) {
 			return r, nil
 		}
-		c.opts.Log.Debug("device_response_skipped", "address", c.opts.Address, "command", command, "response", r.Raw)
+		c.opts.Log.Debug("device_response_skipped", "command", command, "response", r.Raw)
 	}
 }

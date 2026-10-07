@@ -15,18 +15,18 @@ func TestDefaultsApplyToEmptyOptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if opts.PollInterval != 2*time.Second || opts.WriteDebounce != 300*time.Millisecond || opts.Mode != config.ModeBridge || opts.CaptureDir != config.DefaultCaptureDir || opts.LogLevel != slog.LevelInfo {
+	if opts.PollInterval != 2*time.Second || opts.WriteDebounce != 300*time.Millisecond || opts.LogLevel != slog.LevelInfo {
 		t.Fatalf("opts = %+v", opts)
 	}
 }
 
 func TestExplicitOptionsAreHonoured(t *testing.T) {
 	t.Parallel()
-	opts, err := config.ParseOptions([]byte(`{"poll_interval_ms":10000,"write_debounce_ms":0,"mode":"capture","capture_dir":"/share/cap","log_level":"debug"}`))
+	opts, err := config.ParseOptions([]byte(`{"poll_interval_ms":10000,"write_debounce_ms":0,"log_level":"debug"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if opts.PollInterval != 10*time.Second || opts.WriteDebounce != 0 || opts.Mode != config.ModeCapture || opts.CaptureDir != "/share/cap" || opts.LogLevel != slog.LevelDebug {
+	if opts.PollInterval != 10*time.Second || opts.WriteDebounce != 0 || opts.LogLevel != slog.LevelDebug {
 		t.Fatalf("opts = %+v", opts)
 	}
 }
@@ -36,7 +36,6 @@ func TestInvalidOptionsAreRejected(t *testing.T) {
 	cases := map[string]string{
 		`{"poll_interval_ms":100}`:   "poll_interval_ms",
 		`{"write_debounce_ms":9000}`: "write_debounce_ms",
-		`{"mode":"replay"}`:          "mode",
 		`{"log_level":"loud"}`:       "log_level",
 		`not json`:                   "valid JSON",
 	}

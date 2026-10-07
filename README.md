@@ -37,9 +37,8 @@ Speaks the documented [ControlSpace Serial Control Protocol v5.13](https://asset
 | --- | --- |
 | `GA "Label">n` / `SA "Label">n=v` | read / write a module parameter (Gain 1,2 · Input 2,3,4,5 · Amp Output 1,2) |
 | `SS n` / `GS` | recall / query parameter set (main ESP only) |
-| `SUB`, `GC`, `GY`, `GF` | capture-mode probes only |
 
-Developed against the protocol document; **not yet validated on hardware**. The first on-site step is `mode: capture`, which records every exchange so the parser's assumptions (ACK framing, response formats, subscription support) can be checked against real devices and turned into fixtures.
+Developed against the protocol document; **not yet validated on hardware**. Run with `log_level: debug` on first contact: every command and response is logged, so ACK framing and response formats can be checked against the emulator in `internal/testutil/fakedevice.go`.
 
 ## Development
 
@@ -72,7 +71,6 @@ bose-controlspace-controller/
     ├── csp/        protocol: commands, response tokeniser, reconnecting client
     ├── bridge/     lifecycle · poll.go · write.go (debounce, set→ack→readback) · publish.go · manifest.go
     ├── mqtt/       connection, topics, discovery payloads, inbound router
-    ├── capture/    capture mode transcripts
     ├── config/     options + Supervisor MQTT lookup
     └── testutil/   fake device (protocol emulator), fake broker
 ```

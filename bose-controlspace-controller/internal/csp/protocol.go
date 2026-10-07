@@ -63,10 +63,6 @@ func RecallParameterSet(n int) string {
 // System and device commands without arguments.
 const (
 	GetParameterSet      = "GS"
-	ProbeSubscription    = "SUB"
-	GetAmpConfiguration  = "GC"
-	GetAmpStandby        = "GY"
-	GetAmpFaultStatus    = "GF"
 	OnValue              = "O"
 	OffValue             = "F"
 	MinusInfinityLevelDB = -60.5
