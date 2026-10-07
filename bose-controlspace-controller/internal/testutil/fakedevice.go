@@ -99,14 +99,6 @@ func (d *FakeDevice) DropConnections() {
 	}
 }
 
-func (d *FakeDevice) Serve(conn net.Conn) {
-	d.mu.Lock()
-	d.conns = append(d.conns, conn)
-	d.accepted++
-	d.mu.Unlock()
-	d.serve(conn)
-}
-
 func (d *FakeDevice) Dial(context.Context, string) (net.Conn, error) {
 	client, server := net.Pipe()
 	d.mu.Lock()

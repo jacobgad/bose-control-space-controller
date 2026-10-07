@@ -47,9 +47,6 @@ type Bridge struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
-
-	mu           sync.Mutex
-	lastRecalled int
 }
 
 type unit struct {
@@ -227,15 +224,4 @@ func (b *Bridge) stateHandler(u *unit) csp.StateHandler {
 		defer cancel()
 		b.publishUnitState(ctx, u)
 	}
-}
-
-// Unit reports a device's connection state, for tests and diagnostics.
-func (b *Bridge) Unit(nodeID string) (connected bool, lastError string, ok bool) {
-	u, ok := b.devices[nodeID]
-	if !ok {
-		return false, "", false
-	}
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	return u.connected, u.lastError, true
 }

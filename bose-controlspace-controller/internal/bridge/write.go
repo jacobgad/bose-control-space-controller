@@ -139,10 +139,3 @@ func (b *Bridge) RecallParameterSet(id int) {
 		log.Info("parameter_set_recalled")
 	}()
 }
-
-// LastRecalled is the parameter set id most recently reported by the main device.
-func (b *Bridge) LastRecalled() int {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	return b.lastRecalled
-}

@@ -86,9 +86,6 @@ func (b *Bridge) publishLastRecalled(ctx context.Context, id int) {
 	if b.main == nil {
 		return
 	}
-	b.mu.Lock()
-	b.lastRecalled = id
-	b.mu.Unlock()
 	label := mqtt.PayloadNone
 	if ps, ok := b.sets[id]; ok {
 		label = ps.Label

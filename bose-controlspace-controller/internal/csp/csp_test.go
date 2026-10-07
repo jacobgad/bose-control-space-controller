@@ -134,8 +134,8 @@ func TestNAKIsReportedWithCode(t *testing.T) {
 	if !errors.As(err, &nak) || nak.Code != "02" {
 		t.Fatalf("bad index err = %v", err)
 	}
-	if !c.Connected() {
-		t.Fatal("a NAK must not drop the session")
+	if dev.Connections() != 1 {
+		t.Fatalf("connections = %d; a NAK must not drop the session", dev.Connections())
 	}
 }
 
@@ -177,12 +177,12 @@ func TestSilentDeviceTimesOutAndRedialsNextCall(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "no response") {
 		t.Fatalf("err = %v", err)
 	}
-	if c.Connected() {
-		t.Fatal("timeout must drop the session")
-	}
 	dev.SetSilent(false)
 	if v, err := c.Get(t.Context(), "Hall", 1); err != nil || v != "0" {
 		t.Fatalf("after redial Get = %q, %v", v, err)
+	}
+	if dev.Connections() != 2 {
+		t.Fatalf("connections = %d; timeout must drop the session and the next call redial", dev.Connections())
 	}
 	mu.Lock()
 	defer mu.Unlock()

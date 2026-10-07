@@ -39,6 +39,10 @@ jobs:
           working-directory: bose-controlspace-controller
       - run: go vet ./...
       - run: go test -race -timeout=5m ./...
+      - name: No dead code
+        run: |
+          out=$(go run golang.org/x/tools/cmd/deadcode@v0.51.0 -test ./...)
+          if [ -n "$out" ]; then echo "$out"; exit 1; fi
 
   image:
     runs-on: ${{ matrix.runner }}

@@ -97,9 +97,7 @@ func TestOutOfBandChangesAreMirrored(t *testing.T) {
 	h.waitPayload(t, hall.LevelState, "-7.5")
 	h.waitPayload(t, hall.MuteState, "ON")
 	h.waitPayload(t, mqttpkg.ForDevice(espMain).ParameterSetState, "Concert")
-	if h.bridge.LastRecalled() != 2 {
-		t.Fatalf("last recalled = %d", h.bridge.LastRecalled())
-	}
+	h.waitPayload(t, mqttpkg.ForDevice(espMain).ParameterSetAttrs, `{"id":2}`)
 	if countCommands(h.device(espMain).Commands(), "SA") != 0 {
 		t.Fatal("polling must never write")
 	}

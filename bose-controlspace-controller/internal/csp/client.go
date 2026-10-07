@@ -56,23 +56,6 @@ func NewClient(opts ClientOptions) *Client {
 	return &Client{opts: opts}
 }
 
-// Address is the device endpoint.
-func (c *Client) Address() string { return c.opts.Address }
-
-// Connected reports whether a session is currently open.
-func (c *Client) Connected() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.conn != nil
-}
-
-// Connect opens the session if needed.
-func (c *Client) Connect(ctx context.Context) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.ensureLocked(ctx)
-}
-
 func (c *Client) ensureLocked(ctx context.Context) error {
 	if c.conn != nil {
 		return nil

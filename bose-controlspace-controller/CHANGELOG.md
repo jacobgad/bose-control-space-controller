@@ -1,11 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+- Removed `capture` mode and the `mode`/`capture_dir` options; the add-on no longer maps `/share`. `log_level: debug` logs every device command and response instead.
+
 ## 0.2.0
 
 - The ControlSpace Designer `.csp` is now uploaded on the add-on's web UI (ingress) instead of being copied to `/share`. The `design_path` option is gone; the file is validated before anything changes, stored in `/data`, and the bridge restarts with it live.
 - The page shows the running design: file, Designer version, every device with address and firmware, block and parameter-set counts.
 - Starting without a design no longer exits; the add-on idles with the page available.
-- Removed `capture` mode and the `mode`/`capture_dir` options; the add-on no longer maps `/share`.
 
 ## 0.1.0
 
