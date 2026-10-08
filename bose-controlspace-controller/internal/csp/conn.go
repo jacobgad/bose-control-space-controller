@@ -80,8 +80,6 @@ func (c *Conn) Close() error {
 	return err
 }
 
-// readLoop tokenises the byte stream: ACK is a lone byte, NAK is a byte followed by
-// " nn", and everything else is a CR-terminated line; stray CR/LF are dropped.
 func (c *Conn) readLoop() {
 	defer close(c.readDone)
 	defer close(c.tokens)
@@ -89,6 +87,7 @@ func (c *Conn) readLoop() {
 	var line strings.Builder
 	var raw []byte
 	inNAK := false
+	inQuote := false
 	emit := func(r Response) {
 		if c.transcript != nil {
 			c.transcript.Received(c.address, raw)
@@ -108,7 +107,8 @@ func (c *Conn) readLoop() {
 			emit(Response{Kind: KindACK})
 		case b == NAK && line.Len() == 0:
 			inNAK = true
-		case b == '\r' || b == '\n':
+		// ESP/PowerMatch firmware ends GA responses with the ";" command separator, not only CR.
+		case b == '\r' || b == '\n' || (b == ';' && !inQuote && !inNAK):
 			switch {
 			case inNAK:
 				emit(Response{Kind: KindNAK, Raw: line.String(), NAKCode: strings.TrimSpace(line.String())})
@@ -119,7 +119,11 @@ func (c *Conn) readLoop() {
 			}
 			line.Reset()
 			inNAK = false
+			inQuote = false
 		default:
+			if b == '"' {
+				inQuote = !inQuote
+			}
 			line.WriteByte(b)
 			if code := strings.TrimSpace(line.String()); inNAK && len(code) >= 2 {
 				emit(Response{Kind: KindNAK, Raw: line.String(), NAKCode: code})

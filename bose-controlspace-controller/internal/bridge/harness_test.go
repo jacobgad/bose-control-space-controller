@@ -93,6 +93,7 @@ func newHarness(t *testing.T, o harnessOptions) *harness {
 	}
 	for _, dev := range d.Devices {
 		fake := testutil.NewFakeDevice()
+		fake.ValueTerminator = ";"
 		for _, blk := range d.BlocksOn(dev.NodeID) {
 			seed(fake, blk)
 		}

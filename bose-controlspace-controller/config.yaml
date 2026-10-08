@@ -1,5 +1,5 @@
 name: Bose ControlSpace Controller
-version: "0.2.1"
+version: "0.2.2"
 slug: bose_controlspace_controller
 description: MQTT bridge exposing Bose ControlSpace processors and PowerMatch amplifiers as Home Assistant devices
 url: https://github.com/jacobgad/bose-control-space-controller

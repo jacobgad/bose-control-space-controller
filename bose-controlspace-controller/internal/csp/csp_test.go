@@ -119,6 +119,36 @@ func TestACKWithTrailingCarriageReturnIsAccepted(t *testing.T) {
 	}
 }
 
+func TestSemicolonTerminatedValuesAreAccepted(t *testing.T) {
+	t.Parallel()
+	dev := testutil.NewFakeDevice()
+	dev.ValueTerminator = ";"
+	dev.SetModule("Wireless 1", csp.InputLevel, "0.0")
+	dev.SetModule("Wireless 1", csp.InputMute, "F")
+	c := newClient(t, dev)
+	if v, err := c.Get(t.Context(), "Wireless 1", csp.InputLevel); err != nil || v != "0.0" {
+		t.Fatalf("level = %q, %v", v, err)
+	}
+	if v, err := c.Get(t.Context(), "Wireless 1", csp.InputMute); err != nil || v != "F" {
+		t.Fatalf("mute = %q, %v", v, err)
+	}
+}
+
+func TestSemicolonSeparatedResponsesOnOneLineAreSplit(t *testing.T) {
+	t.Parallel()
+	client, server := net.Pipe()
+	t.Cleanup(func() { client.Close(); server.Close() })
+	go func() {
+		buf := make([]byte, 64)
+		_, _ = server.Read(buf)
+		_, _ = server.Write([]byte("GA\"A;B\">1=-4;GA\"Foyer\">1=-6\r"))
+	}()
+	c := csp.NewClient(csp.ClientOptions{Address: "x", Timeout: 200 * time.Millisecond, Dial: func(context.Context, string) (net.Conn, error) { return client, nil }})
+	if v, err := c.Get(t.Context(), "Foyer", 1); err != nil || v != "-6" {
+		t.Fatalf("Get = %q, %v", v, err)
+	}
+}
+
 func TestNAKIsReportedWithCode(t *testing.T) {
 	t.Parallel()
 	dev := testutil.NewFakeDevice()

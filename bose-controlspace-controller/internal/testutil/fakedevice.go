@@ -24,7 +24,9 @@ type FakeDevice struct {
 	silent       bool
 	// ACKTerminator is appended after the ACK byte; the protocol leaves this unspecified.
 	ACKTerminator string
-	OnRecall      func(d *FakeDevice, n int)
+	// Real ESP/PowerMatch firmware emits ";" here.
+	ValueTerminator string
+	OnRecall        func(d *FakeDevice, n int)
 }
 
 func NewFakeDevice() *FakeDevice {
@@ -164,7 +166,7 @@ func (d *FakeDevice) handle(cmd string) string {
 		if !ok {
 			return nak("02")
 		}
-		return fmt.Sprintf("GA\"%s\"%s=%s\r", label, m[2], v)
+		return fmt.Sprintf("GA\"%s\"%s=%s%s\r", label, m[2], v, d.ValueTerminator)
 	}
 	if m := setPattern.FindStringSubmatch(cmd); m != nil {
 		label, index, value := m[1], lastIndex(m[2]), m[3]

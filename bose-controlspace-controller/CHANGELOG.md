@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Accept the `;` that ESP and PowerMatch firmware append to `GA` responses (`GA"Wireless 1">3=0.0;`). Previously every level/mute/phantom read was logged as `parameter_unparseable` and never published.
+
 ## 0.2.1
 
 - Removed `capture` mode and the `mode`/`capture_dir` options; the add-on no longer maps `/share`. `log_level: debug` logs every device command and response instead.
