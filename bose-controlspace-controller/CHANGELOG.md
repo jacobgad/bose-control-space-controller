@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Inputs use the handheld mic icon (`mdi:microphone-variant`); gain blocks, being groups of mics, keep `mdi:microphone`.
+
 ## 0.3.1
 
 - **Recall buttons actually appear under the controller device.** 0.3.0 changed the buttons' device but kept their identity, and Home Assistant never moves an existing entity to another device on a discovery update. They are now `button.bose_controller_recall_<id>`; the old `button.bose_<id>_recall` entities are removed automatically.

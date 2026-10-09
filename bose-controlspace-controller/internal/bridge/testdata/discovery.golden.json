@@ -1083,7 +1083,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:microphone",
+      "icon": "mdi:microphone-variant",
       "name": "Mic 1",
       "object_id": "bose_300001_enabled",
       "optimistic": false,
@@ -1172,7 +1172,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:microphone",
+      "icon": "mdi:microphone-variant",
       "name": "Mic 2",
       "object_id": "bose_300002_enabled",
       "optimistic": false,
@@ -1261,7 +1261,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:microphone",
+      "icon": "mdi:microphone-variant",
       "name": "Playback",
       "object_id": "bose_300003_enabled",
       "optimistic": false,
@@ -1350,7 +1350,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:microphone",
+      "icon": "mdi:microphone-variant",
       "name": "Annex Mic",
       "object_id": "bose_300004_enabled",
       "optimistic": false,

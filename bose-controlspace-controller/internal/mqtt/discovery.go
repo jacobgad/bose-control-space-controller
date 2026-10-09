@@ -30,7 +30,8 @@ const (
 	controllerName = "Bose ControlSpace Controller"
 
 	iconESPLevel     = "mdi:tune-vertical-variant"
-	iconESPEnabled   = "mdi:microphone"
+	iconInputEnabled = "mdi:microphone-variant"
+	iconGainEnabled  = "mdi:microphone"
 	iconPMLevel      = "mdi:volume-high"
 	iconPMEnabled    = "mdi:speaker"
 	iconPhantom      = "mdi:flash"
@@ -127,12 +128,17 @@ func switchFields(state, command string) map[string]any {
 	}
 }
 
-// ESP blocks are sources (mic + fader); PowerMatch outputs are speakers (speaker + volume).
-func blockIcons(t design.DeviceType) (enabled, level string) {
-	if t == design.DevicePowerMatch {
+// A gain block is a group of mics, so it takes the plain mic and a single input the
+// handheld; PowerMatch outputs are speakers.
+func blockIcons(kind design.BlockKind) (enabled, level string) {
+	switch kind {
+	case design.KindAmpOutput:
 		return iconPMEnabled, iconPMLevel
+	case design.KindInput:
+		return iconInputEnabled, iconESPLevel
+	default:
+		return iconGainEnabled, iconESPLevel
 	}
-	return iconESPEnabled, iconESPLevel
 }
 
 // BlockMessages lists the entities for one block on its device. The enabled switch
@@ -141,7 +147,7 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 	topics := ForBlock(b.NodeID)
 	device := PhysicalDevice(d)
 	availability := ForDevice(d.NodeID).Availability
-	enabledIcon, levelIcon := blockIcons(d.Type)
+	enabledIcon, levelIcon := blockIcons(b.Kind)
 	entities := []Entity{
 		{
 			Component: "number", NodeID: b.NodeID, Object: "level", Name: b.Label + " level", Icon: levelIcon,

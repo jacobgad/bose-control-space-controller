@@ -44,6 +44,9 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 	if icon := configs["homeassistant/number/bose_"+hallGain+"/level/config"]["icon"]; icon != "mdi:tune-vertical-variant" {
 		t.Fatalf("ESP level icon = %v", icon)
 	}
+	if icon := configs["homeassistant/switch/bose_"+annexMic+"/enabled/config"]["icon"]; icon != "mdi:microphone-variant" {
+		t.Fatalf("input enabled icon = %v", icon)
+	}
 	if icon := configs["homeassistant/switch/bose_"+hallAmp+"/enabled/config"]["icon"]; icon != "mdi:speaker" {
 		t.Fatalf("amp output enabled icon = %v", icon)
 	}
