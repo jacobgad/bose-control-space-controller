@@ -26,7 +26,7 @@
       },
       "icon": "mdi:playlist-play",
       "name": "Recall Service",
-      "object_id": "bose_700001_recall",
+      "object_id": "bose_controller_recall_700001",
       "origin": {
         "name": "Bose ControlSpace Controller",
         "support_url": "https://example.invalid",
@@ -35,9 +35,9 @@
       "payload_press": "PRESS",
       "qos": 1,
       "retain": false,
-      "unique_id": "bose_700001_recall"
+      "unique_id": "bose_controller_recall_700001"
     },
-    "topic": "homeassistant/button/bose_700001/recall/config"
+    "topic": "homeassistant/button/bose_controller/recall_700001/config"
   },
   {
     "payload": {
@@ -66,7 +66,7 @@
       },
       "icon": "mdi:playlist-play",
       "name": "Recall Concert",
-      "object_id": "bose_700002_recall",
+      "object_id": "bose_controller_recall_700002",
       "origin": {
         "name": "Bose ControlSpace Controller",
         "support_url": "https://example.invalid",
@@ -75,9 +75,9 @@
       "payload_press": "PRESS",
       "qos": 1,
       "retain": false,
-      "unique_id": "bose_700002_recall"
+      "unique_id": "bose_controller_recall_700002"
     },
-    "topic": "homeassistant/button/bose_700002/recall/config"
+    "topic": "homeassistant/button/bose_controller/recall_700002/config"
   },
   {
     "payload": {
@@ -106,7 +106,7 @@
       },
       "icon": "mdi:playlist-play",
       "name": "Recall Rehearsal",
-      "object_id": "bose_700003_recall",
+      "object_id": "bose_controller_recall_700003",
       "origin": {
         "name": "Bose ControlSpace Controller",
         "support_url": "https://example.invalid",
@@ -115,9 +115,9 @@
       "payload_press": "PRESS",
       "qos": 1,
       "retain": false,
-      "unique_id": "bose_700003_recall"
+      "unique_id": "bose_controller_recall_700003"
     },
-    "topic": "homeassistant/button/bose_700003/recall/config"
+    "topic": "homeassistant/button/bose_controller/recall_700003/config"
   },
   {
     "payload": {
@@ -145,7 +145,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -192,7 +192,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -239,7 +239,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -286,7 +286,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -333,7 +333,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -380,7 +380,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -427,7 +427,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -474,7 +474,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-high",
+      "icon": "mdi:tune-vertical-variant",
       "max": 12,
       "min": -60.5,
       "mode": "slider",
@@ -907,7 +907,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:speaker",
+      "icon": "mdi:microphone",
       "name": "Hall",
       "object_id": "bose_200001_enabled",
       "optimistic": false,
@@ -951,7 +951,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:speaker",
+      "icon": "mdi:microphone",
       "name": "Foyer",
       "object_id": "bose_200002_enabled",
       "optimistic": false,
@@ -995,7 +995,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:speaker",
+      "icon": "mdi:microphone",
       "name": "Stage",
       "object_id": "bose_200003_enabled",
       "optimistic": false,
@@ -1039,7 +1039,7 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:speaker",
+      "icon": "mdi:microphone",
       "name": "Annex",
       "object_id": "bose_200004_enabled",
       "optimistic": false,
@@ -1439,7 +1439,7 @@
         "sw_version": "v4.200",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:amplifier",
+      "icon": "mdi:speaker",
       "name": "Hall L R",
       "object_id": "bose_500001_enabled",
       "optimistic": false,
@@ -1483,7 +1483,7 @@
         "sw_version": "v4.200",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:amplifier",
+      "icon": "mdi:speaker",
       "name": "Foyer",
       "object_id": "bose_500002_enabled",
       "optimistic": false,
@@ -1527,7 +1527,7 @@
         "sw_version": "v4.200",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:amplifier",
+      "icon": "mdi:speaker",
       "name": "Annex Spkrs",
       "object_id": "bose_500003_enabled",
       "optimistic": false,

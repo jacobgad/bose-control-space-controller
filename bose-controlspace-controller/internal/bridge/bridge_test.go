@@ -38,11 +38,17 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 		t.Fatalf("amp output max = %v", amp["max"])
 	}
 	enabled := configs["homeassistant/switch/bose_"+hallGain+"/enabled/config"]
-	if enabled["name"] != "Hall" || enabled["icon"] != "mdi:speaker" || enabled["command_topic"] != "bose/block/"+hallGain+"/enabled/set" {
+	if enabled["name"] != "Hall" || enabled["icon"] != "mdi:microphone" || enabled["command_topic"] != "bose/block/"+hallGain+"/enabled/set" {
 		t.Fatalf("Hall enabled config = %v", enabled)
 	}
-	if icon := configs["homeassistant/switch/bose_"+annexMic+"/enabled/config"]["icon"]; icon != "mdi:microphone" {
-		t.Fatalf("input enabled icon = %v", icon)
+	if icon := configs["homeassistant/number/bose_"+hallGain+"/level/config"]["icon"]; icon != "mdi:tune-vertical-variant" {
+		t.Fatalf("ESP level icon = %v", icon)
+	}
+	if icon := configs["homeassistant/switch/bose_"+hallAmp+"/enabled/config"]["icon"]; icon != "mdi:speaker" {
+		t.Fatalf("amp output enabled icon = %v", icon)
+	}
+	if icon := configs["homeassistant/number/bose_"+hallAmp+"/level/config"]["icon"]; icon != "mdi:volume-high" {
+		t.Fatalf("amp output level icon = %v", icon)
 	}
 	phantom := configs["homeassistant/switch/bose_"+annexMic+"/phantom/config"]
 	if phantom["entity_category"] != "config" || phantom["command_topic"] != "bose/block/"+annexMic+"/phantom/set" {
@@ -51,12 +57,15 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 	if _, ok := configs["homeassistant/sensor/bose_"+annexMic+"/gain/config"]; ok {
 		t.Fatal("preamp gain must not be exposed")
 	}
-	recall := configs["homeassistant/button/bose_700003/recall/config"]
+	recall := configs["homeassistant/button/bose_controller/recall_700003/config"]
 	if recall == nil {
 		t.Fatal("missing Rehearsal recall button")
 	}
 	if dev := recall["device"].(map[string]any); dev["identifiers"].([]any)[0] != mqttpkg.ControllerIdentifier {
 		t.Fatalf("recall button device = %v", dev)
+	}
+	if recall["unique_id"] != "bose_controller_recall_700003" {
+		t.Fatalf("recall unique_id = %v", recall["unique_id"])
 	}
 	if topics := availabilityTopics(recall); len(topics) != 2 || topics[1] != mqttpkg.ParameterSetButtonAvailability(3) {
 		t.Fatalf("recall button availability = %v", topics)

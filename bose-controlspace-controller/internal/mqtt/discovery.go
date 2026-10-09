@@ -29,10 +29,10 @@ const (
 	manufacturer   = "Bose Professional"
 	controllerName = "Bose ControlSpace Controller"
 
-	iconLevel        = "mdi:volume-high"
-	iconInput        = "mdi:microphone"
-	iconGain         = "mdi:speaker"
-	iconAmpOutput    = "mdi:amplifier"
+	iconESPLevel     = "mdi:tune-vertical-variant"
+	iconESPEnabled   = "mdi:microphone"
+	iconPMLevel      = "mdi:volume-high"
+	iconPMEnabled    = "mdi:speaker"
 	iconPhantom      = "mdi:flash"
 	iconParameterSet = "mdi:playlist-play"
 	iconLastRecalled = "mdi:playlist-check"
@@ -127,15 +127,12 @@ func switchFields(state, command string) map[string]any {
 	}
 }
 
-func enabledIcon(kind design.BlockKind) string {
-	switch kind {
-	case design.KindInput:
-		return iconInput
-	case design.KindAmpOutput:
-		return iconAmpOutput
-	default:
-		return iconGain
+// ESP blocks are sources (mic + fader); PowerMatch outputs are speakers (speaker + volume).
+func blockIcons(t design.DeviceType) (enabled, level string) {
+	if t == design.DevicePowerMatch {
+		return iconPMEnabled, iconPMLevel
 	}
+	return iconESPEnabled, iconESPLevel
 }
 
 // BlockMessages lists the entities for one block on its device. The enabled switch
@@ -144,9 +141,10 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 	topics := ForBlock(b.NodeID)
 	device := PhysicalDevice(d)
 	availability := ForDevice(d.NodeID).Availability
+	enabledIcon, levelIcon := blockIcons(d.Type)
 	entities := []Entity{
 		{
-			Component: "number", NodeID: b.NodeID, Object: "level", Name: b.Label + " level", Icon: iconLevel,
+			Component: "number", NodeID: b.NodeID, Object: "level", Name: b.Label + " level", Icon: levelIcon,
 			Device: device, Availability: availability,
 			Fields: map[string]any{
 				"state_topic":         topics.LevelState,
@@ -162,7 +160,7 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 			},
 		},
 		{
-			Component: "switch", NodeID: b.NodeID, Object: ParameterEnabled, Name: b.Label, Icon: enabledIcon(b.Kind),
+			Component: "switch", NodeID: b.NodeID, Object: ParameterEnabled, Name: b.Label, Icon: enabledIcon,
 			Device: device, Availability: availability,
 			Fields: switchFields(topics.EnabledState, topics.EnabledSet),
 		},
@@ -182,13 +180,15 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 }
 
 // ParameterSetMessages lists one recall button per set on the controller and one
-// last-recalled sensor on each unit a set writes to.
+// last-recalled sensor on each unit a set writes to. Buttons carry the controller
+// in their identity: Home Assistant never moves an existing entity to another device
+// on a discovery update, so a new identity is the only way to re-home them.
 func ParameterSetMessages(d design.Design, o Origin) []Message {
 	controller := ControllerDevice(o)
 	var out []Message
 	for _, ps := range d.ParameterSets {
 		out = append(out, Build(Entity{
-			Component: "button", NodeID: ps.NodeID, Object: "recall", Name: "Recall " + ps.Label, Icon: iconParameterSet,
+			Component: "button", NodeID: "controller", Object: "recall_" + ps.NodeID, Name: "Recall " + ps.Label, Icon: iconParameterSet,
 			Device: controller, Availability: ParameterSetButtonAvailability(ps.ID),
 			Fields: map[string]any{
 				"command_topic": ParameterSetPress(ps.ID),
