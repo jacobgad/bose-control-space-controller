@@ -1,13 +1,18 @@
 # Changelog
 
+## 0.3.1
+
+- **Recall buttons actually appear under the controller device.** 0.3.0 changed the buttons' device but kept their identity, and Home Assistant never moves an existing entity to another device on a discovery update. They are now `button.bose_controller_recall_<id>`; the old `button.bose_<id>_recall` entities are removed automatically.
+- **Icons by device type.** ESP blocks are sources (microphone switch, fader level); PowerMatch outputs are speakers (speaker switch, volume level).
+
 ## 0.3.0
 
 Entity model reworked for dashboards. Entity IDs change; there is no migration.
 
-- **`enabled` switch replaces `mute`.** On means audio passes. Named after the block alone (`Wireless 1`), icons by device type: ESP blocks are sources (microphone switch, fader level), PowerMatch outputs are speakers (speaker switch, volume level). Topics `bose/block/<id>/enabled/{state,set}`.
+- **`enabled` switch replaces `mute`.** On means audio passes. Named after the block alone (`Wireless 1`), icon by kind. Topics `bose/block/<id>/enabled/{state,set}`.
 - **Phantom power is a switch** (configuration category) instead of a read-only binary sensor.
 - **Preamp gain sensor removed.**
-- **Recall buttons moved to the controller device** (`button.bose_controller_recall_<id>`; the old `button.bose_<id>_recall` entities are removed, since Home Assistant does not re-home an existing entity). Recall now goes to every unit the set writes to (from the `.csp` assignments) instead of only the main, so a set still lands when the main unit's building is powered off. Buttons are unavailable only when none of their units is reachable; partial recalls are logged (`parameter_set_partial`).
+- **Recall buttons moved to the controller device.** Recall now goes to every unit the set writes to (from the `.csp` assignments) instead of only the main, so a set still lands when the main unit's building is powered off. Buttons are unavailable only when none of their units is reachable; partial recalls are logged (`parameter_set_partial`).
 - *Last recalled parameter set* is now one diagnostic sensor per unit a set writes to, on that unit, instead of one on the main.
 
 ## 0.2.2
