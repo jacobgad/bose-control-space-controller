@@ -30,8 +30,9 @@ const (
 	controllerName = "Bose ControlSpace Controller"
 
 	iconLevel        = "mdi:volume-high"
-	iconMute         = "mdi:volume-off"
-	iconGain         = "mdi:microphone-settings"
+	iconInput        = "mdi:microphone"
+	iconGain         = "mdi:speaker"
+	iconAmpOutput    = "mdi:amplifier"
 	iconPhantom      = "mdi:flash"
 	iconParameterSet = "mdi:playlist-play"
 	iconLastRecalled = "mdi:playlist-check"
@@ -50,9 +51,9 @@ type Entity struct {
 	Category string
 	Icon     string
 	Device   map[string]any
-	// DeviceAvailability, when set, makes the entity unavailable while that unit is unreachable.
-	DeviceAvailability string
-	Fields             map[string]any
+	// Availability, when set, is a second topic that must also read online.
+	Availability string
+	Fields       map[string]any
 }
 
 // Build renders the discovery message for an entity.
@@ -72,8 +73,8 @@ func Build(e Entity, o Origin) Message {
 		payload["entity_category"] = e.Category
 	}
 	availability := []map[string]any{controllerAvailability()}
-	if e.DeviceAvailability != "" {
-		availability = append(availability, map[string]any{"topic": e.DeviceAvailability, "payload_available": PayloadOnline, "payload_not_available": PayloadOffline})
+	if e.Availability != "" {
+		availability = append(availability, map[string]any{"topic": e.Availability, "payload_available": PayloadOnline, "payload_not_available": PayloadOffline})
 		payload["availability_mode"] = "all"
 	}
 	payload["availability"] = availability
@@ -114,7 +115,31 @@ func PhysicalDevice(d design.Device) map[string]any {
 	return device
 }
 
-// BlockMessages lists the entities for one block on its device.
+func switchFields(state, command string) map[string]any {
+	return map[string]any{
+		"state_topic":   state,
+		"command_topic": command,
+		"payload_on":    PayloadOn,
+		"payload_off":   PayloadOff,
+		"optimistic":    false,
+		"retain":        false,
+		"qos":           1,
+	}
+}
+
+func enabledIcon(kind design.BlockKind) string {
+	switch kind {
+	case design.KindInput:
+		return iconInput
+	case design.KindAmpOutput:
+		return iconAmpOutput
+	default:
+		return iconGain
+	}
+}
+
+// BlockMessages lists the entities for one block on its device. The enabled switch
+// is the inverse of the device's mute so dashboards show what is live.
 func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 	topics := ForBlock(b.NodeID)
 	device := PhysicalDevice(d)
@@ -122,7 +147,7 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 	entities := []Entity{
 		{
 			Component: "number", NodeID: b.NodeID, Object: "level", Name: b.Label + " level", Icon: iconLevel,
-			Device: device, DeviceAvailability: availability,
+			Device: device, Availability: availability,
 			Fields: map[string]any{
 				"state_topic":         topics.LevelState,
 				"command_topic":       topics.LevelSet,
@@ -137,32 +162,17 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 			},
 		},
 		{
-			Component: "switch", NodeID: b.NodeID, Object: "mute", Name: b.Label + " mute", Icon: iconMute,
-			Device: device, DeviceAvailability: availability,
-			Fields: map[string]any{
-				"state_topic":   topics.MuteState,
-				"command_topic": topics.MuteSet,
-				"payload_on":    PayloadOn,
-				"payload_off":   PayloadOff,
-				"optimistic":    false,
-				"retain":        false,
-				"qos":           1,
-			},
+			Component: "switch", NodeID: b.NodeID, Object: ParameterEnabled, Name: b.Label, Icon: enabledIcon(b.Kind),
+			Device: device, Availability: availability,
+			Fields: switchFields(topics.EnabledState, topics.EnabledSet),
 		},
 	}
 	if b.Kind == design.KindInput {
-		entities = append(entities,
-			Entity{
-				Component: "sensor", NodeID: b.NodeID, Object: "gain", Name: b.Label + " preamp gain", Category: "diagnostic", Icon: iconGain,
-				Device: device, DeviceAvailability: availability,
-				Fields: map[string]any{"state_topic": topics.GainState, "unit_of_measurement": "dB"},
-			},
-			Entity{
-				Component: "binary_sensor", NodeID: b.NodeID, Object: "phantom", Name: b.Label + " phantom power", Category: "diagnostic", Icon: iconPhantom,
-				Device: device, DeviceAvailability: availability,
-				Fields: map[string]any{"state_topic": topics.PhantomState, "payload_on": PayloadOn, "payload_off": PayloadOff},
-			},
-		)
+		entities = append(entities, Entity{
+			Component: "switch", NodeID: b.NodeID, Object: ParameterPhantom, Name: b.Label + " phantom power", Category: "config", Icon: iconPhantom,
+			Device: device, Availability: availability,
+			Fields: switchFields(topics.PhantomState, topics.PhantomSet),
+		})
 	}
 	out := make([]Message, 0, len(entities))
 	for _, e := range entities {
@@ -171,15 +181,15 @@ func BlockMessages(b design.Block, d design.Device, o Origin) []Message {
 	return out
 }
 
-// ParameterSetMessages lists the recall buttons and the last-recalled sensor on the main device.
-func ParameterSetMessages(sets []design.ParameterSet, main design.Device, o Origin) []Message {
-	device := PhysicalDevice(main)
-	availability := ForDevice(main.NodeID).Availability
-	out := make([]Message, 0, len(sets)+1)
-	for _, ps := range sets {
+// ParameterSetMessages lists one recall button per set on the controller and one
+// last-recalled sensor on each unit a set writes to.
+func ParameterSetMessages(d design.Design, o Origin) []Message {
+	controller := ControllerDevice(o)
+	var out []Message
+	for _, ps := range d.ParameterSets {
 		out = append(out, Build(Entity{
 			Component: "button", NodeID: ps.NodeID, Object: "recall", Name: "Recall " + ps.Label, Icon: iconParameterSet,
-			Device: device, DeviceAvailability: availability,
+			Device: controller, Availability: ParameterSetButtonAvailability(ps.ID),
 			Fields: map[string]any{
 				"command_topic": ParameterSetPress(ps.ID),
 				"payload_press": PayloadPress,
@@ -188,11 +198,14 @@ func ParameterSetMessages(sets []design.ParameterSet, main design.Device, o Orig
 			},
 		}, o))
 	}
-	if len(sets) > 0 {
-		topics := ForDevice(main.NodeID)
+	for _, dev := range d.Devices {
+		if !d.WritesTo(dev.NodeID) {
+			continue
+		}
+		topics := ForDevice(dev.NodeID)
 		out = append(out, Build(Entity{
-			Component: "sensor", NodeID: main.NodeID, Object: "last_parameter_set", Name: "Last recalled parameter set", Category: "diagnostic", Icon: iconLastRecalled,
-			Device: device, DeviceAvailability: availability,
+			Component: "sensor", NodeID: dev.NodeID, Object: "last_parameter_set", Name: "Last recalled parameter set", Category: "diagnostic", Icon: iconLastRecalled,
+			Device: PhysicalDevice(dev), Availability: topics.Availability,
 			Fields: map[string]any{
 				"state_topic":           topics.ParameterSetState,
 				"json_attributes_topic": topics.ParameterSetAttrs,
@@ -238,9 +251,7 @@ func DesignMessages(d design.Design, o Origin) []Message {
 		}
 		out = append(out, BlockMessages(b, dev, o)...)
 	}
-	if main, ok := d.Main(); ok {
-		out = append(out, ParameterSetMessages(d.ParameterSets, main, o)...)
-	}
+	out = append(out, ParameterSetMessages(d, o)...)
 	return out
 }
 

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/netip"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -69,11 +70,13 @@ type Block struct {
 	Level        Range
 }
 
-// ParameterSet is a populated preset, recalled by number on the main device.
+// ParameterSet is a populated preset. Devices lists the units whose blocks it
+// writes, in design order; a recall only needs those units reachable.
 type ParameterSet struct {
-	ID     int
-	NodeID string
-	Label  string
+	ID      int
+	NodeID  string
+	Label   string
+	Devices []string
 }
 
 // Design is the parsed project.
@@ -94,16 +97,6 @@ type Skipped struct {
 	Reason string
 }
 
-// Main returns the device that receives system commands.
-func (d Design) Main() (Device, bool) {
-	for _, dev := range d.Devices {
-		if dev.IsMain {
-			return dev, true
-		}
-	}
-	return Device{}, false
-}
-
 // Device looks a device up by nodeID.
 func (d Design) Device(nodeID string) (Device, bool) {
 	for _, dev := range d.Devices {
@@ -112,6 +105,16 @@ func (d Design) Device(nodeID string) (Device, bool) {
 		}
 	}
 	return Device{}, false
+}
+
+// WritesTo reports whether any parameter set changes something on the device.
+func (d Design) WritesTo(deviceNodeID string) bool {
+	for _, ps := range d.ParameterSets {
+		if slices.Contains(ps.Devices, deviceNodeID) {
+			return true
+		}
+	}
+	return false
 }
 
 // BlocksOn lists the blocks hosted by a device, in file order.
@@ -159,7 +162,8 @@ type xmlParameterSet struct {
 }
 
 type xmlAssign struct {
-	TargetID string `xml:"targetID,attr"`
+	TargetType string `xml:"targetType,attr"`
+	TargetID   string `xml:"targetID,attr"`
 }
 
 type xmlAssignmentSet struct {
@@ -261,7 +265,7 @@ func Parse(r io.Reader) (Design, error) {
 		d.Blocks = append(d.Blocks, block)
 	}
 
-	d.ParameterSets = parseParameterSets(project)
+	d.ParameterSets = parseParameterSets(project, d.Devices)
 	return d, nil
 }
 
@@ -348,24 +352,64 @@ func labelIndex(nodes []xmlNode) map[labelKey]int {
 	return counts
 }
 
-func parseParameterSets(project xmlProject) []ParameterSet {
-	populated := make(map[int]bool)
+func parseParameterSets(project xmlProject, devices []Device) []ParameterSet {
+	host := hostIndex(project.Nodes, devices)
+	devicesBySet := make(map[int][]string)
 	for _, a := range project.Assignments {
-		if len(a.Assigns) > 0 {
-			populated[a.ID] = true
+		if len(a.Assigns) == 0 {
+			continue
 		}
+		devicesBySet[a.ID] = involvedDevices(a.Assigns, host, devices)
 	}
 	var out []ParameterSet
 	for _, ps := range project.ParameterSets {
-		if !populated[ps.ID] {
+		devices, populated := devicesBySet[ps.ID]
+		if !populated {
 			continue
 		}
 		p := properties{}
 		for _, prop := range ps.Properties {
 			p[prop.Name] = prop
 		}
-		out = append(out, ParameterSet{ID: ps.ID, NodeID: p.value("nodeID"), Label: p.value("label")})
+		out = append(out, ParameterSet{ID: ps.ID, NodeID: p.value("nodeID"), Label: p.value("label"), Devices: devices})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+func hostIndex(nodes []xmlNode, devices []Device) map[string]string {
+	out := make(map[string]string, len(nodes))
+	for _, dev := range devices {
+		out[dev.NodeID] = dev.NodeID
+	}
+	for _, n := range nodes {
+		device := n.ESPNodeID
+		if device == "" {
+			device = n.GonzoNodeID
+		}
+		if device == "" {
+			continue
+		}
+		out[n.props().value("nodeID")] = device
+	}
+	return out
+}
+
+func involvedDevices(assigns []xmlAssign, host map[string]string, devices []Device) []string {
+	involved := make(map[string]bool)
+	for _, a := range assigns {
+		if a.TargetType != "Property" {
+			continue
+		}
+		if device, ok := host[a.TargetID]; ok {
+			involved[device] = true
+		}
+	}
+	var out []string
+	for _, dev := range devices {
+		if involved[dev.NodeID] {
+			out = append(out, dev.NodeID)
+		}
+	}
 	return out
 }

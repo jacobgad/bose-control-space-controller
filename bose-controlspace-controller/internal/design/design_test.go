@@ -3,6 +3,7 @@ package design_test
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -53,10 +54,6 @@ func TestParsesDevicesFromCurrentDesign(t *testing.T) {
 		if dev.Address() != addrs[dev.NodeID] {
 			t.Errorf("device %s address %s, want %s", dev.NodeID, dev.Address(), addrs[dev.NodeID])
 		}
-	}
-	main, ok := d.Main()
-	if !ok || main.NodeID != "100001" {
-		t.Fatalf("main device = %+v", main)
 	}
 }
 
@@ -117,17 +114,66 @@ func TestOnlyPopulatedParameterSetsAreExposed(t *testing.T) {
 	d := load(t, currentFixture)
 
 	want := []design.ParameterSet{
-		{ID: 1, NodeID: "700001", Label: "Service"},
-		{ID: 2, NodeID: "700002", Label: "Concert"},
-		{ID: 3, NodeID: "700003", Label: "Rehearsal"},
+		{ID: 1, NodeID: "700001", Label: "Service", Devices: []string{"100001"}},
+		{ID: 2, NodeID: "700002", Label: "Concert", Devices: []string{"100001"}},
+		{ID: 3, NodeID: "700003", Label: "Rehearsal", Devices: []string{"100002"}},
 	}
 	if len(d.ParameterSets) != len(want) {
 		t.Fatalf("parameter sets = %+v", d.ParameterSets)
 	}
 	for i := range want {
-		if d.ParameterSets[i] != want[i] {
+		if !reflect.DeepEqual(d.ParameterSets[i], want[i]) {
 			t.Errorf("parameter set %d = %+v, want %+v", i, d.ParameterSets[i], want[i])
 		}
+	}
+}
+
+func TestParameterSetSpanningDevicesListsEachOnce(t *testing.T) {
+	t.Parallel()
+	d, err := design.Parse(strings.NewReader(`<?xml version="1.0"?><Project version="5.900" createdBy="test"><Nodes>
+		<Node className="Bose.Creator.Nodes.ESP"><Properties>
+			<Property name="label" value="ESP" /><Property name="nodeID" value="000001" />
+			<Property name="ipAddress" value="10.0.0.1" /><Property name="isMainESP" value="True" /></Properties></Node>
+		<Node className="Bose.Creator.Nodes.Gonzo"><Properties>
+			<Property name="label" value="Amp" /><Property name="nodeID" value="000002" />
+			<Property name="ipAddress" value="10.0.0.2" /></Properties></Node>
+		<Node className="Bose.Creator.Nodes.Gain" espNodeID="000001"><Properties>
+			<Property name="label" value="Hall" /><Property name="nodeID" value="000010" />
+			<Property name="level" value="0" min="-60.5" max="12" step="0.5" /></Properties></Node>
+		<Node className="Bose.Creator.Nodes.SummingMixer" gonzoNodeID="000002"><Properties>
+			<Property name="label" value="Matrix" /><Property name="nodeID" value="000020" /></Properties></Node>
+		<Node className="Bose.Creator.Nodes.CC64"><Properties>
+			<Property name="label" value="Panel" /><Property name="nodeID" value="000030" /></Properties></Node>
+		</Nodes>
+		<ParameterSets><ParameterSet id="1"><Properties>
+			<Property name="label" value="Both" /><Property name="nodeID" value="000040" /></Properties></ParameterSet></ParameterSets>
+		<Assignment><ParameterSet id="1">
+			<Assign linkType="SNAPSHOT" targetType="Property" targetID="000020" targetProp="crossPoint1_1" targetValue="True" />
+			<Assign linkType="SNAPSHOT" targetType="Property" targetID="000010" targetProp="level" targetValue="-3" />
+			<Assign linkType="SNAPSHOT" targetType="Property" targetID="000020" targetProp="crossPoint1_2" targetValue="False" />
+			<Assign linkType="SNAPSHOT" targetType="Property" targetID="000030" targetProp="selector" targetValue="1" />
+		</ParameterSet></Assignment></Project>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(d.ParameterSets) != 1 || !reflect.DeepEqual(d.ParameterSets[0].Devices, []string{"000001", "000002"}) {
+		t.Fatalf("parameter sets = %+v", d.ParameterSets)
+	}
+}
+
+func TestParameterSetTargetingDeviceItselfInvolvesThatDevice(t *testing.T) {
+	t.Parallel()
+	d, err := design.Parse(strings.NewReader(project(``, `
+		<ParameterSets><ParameterSet id="1"><Properties>
+			<Property name="label" value="Standby" /><Property name="nodeID" value="000040" /></Properties></ParameterSet></ParameterSets>
+		<Assignment><ParameterSet id="1">
+			<Assign linkType="SNAPSHOT" targetType="Property" targetID="000001" targetProp="standby" targetValue="True" />
+		</ParameterSet></Assignment>`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(d.ParameterSets) != 1 || !reflect.DeepEqual(d.ParameterSets[0].Devices, []string{"000001"}) {
+		t.Fatalf("parameter sets = %+v", d.ParameterSets)
 	}
 }
 
@@ -231,10 +277,10 @@ func blockByID(d design.Design, id string) (design.Block, bool) {
 	return design.Block{}, false
 }
 
-func project(nodes string) string {
+func project(nodes string, sections ...string) string {
 	return `<?xml version="1.0"?><Project version="5.900" createdBy="test"><Nodes>
 		<Node className="Bose.Creator.Nodes.ESP"><Properties>
 			<Property name="label" value="ESP" /><Property name="nodeID" value="000001" />
 			<Property name="ipAddress" value="10.0.0.1" /><Property name="isMainESP" value="True" />
-			<Property name="serialPortNumber" value="10055" /></Properties></Node>` + nodes + `</Nodes></Project>`
+			<Property name="serialPortNumber" value="10055" /></Properties></Node>` + nodes + `</Nodes>` + strings.Join(sections, "") + `</Project>`
 }

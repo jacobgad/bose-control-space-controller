@@ -38,8 +38,7 @@ type Bridge struct {
 	log     *slog.Logger
 	devices map[string]*unit
 	blocks  map[string]*block
-	sets    map[int]design.ParameterSet
-	main    *unit
+	sets    map[int]*parameterSet
 
 	states  *stateCache
 	pending *debouncer
@@ -55,10 +54,32 @@ type unit struct {
 	blocks []*block
 	topics mqtt.DeviceTopics
 
+	reportsParameterSet bool
+
 	mu        sync.Mutex
 	connected bool
 	lastError string
 	since     time.Time
+}
+
+func (u *unit) isConnected() bool {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return u.connected
+}
+
+type parameterSet struct {
+	design.ParameterSet
+	targets []*unit
+}
+
+func (ps *parameterSet) reachable() bool {
+	for _, u := range ps.targets {
+		if u.isConnected() {
+			return true
+		}
+	}
+	return false
 }
 
 type block struct {
@@ -86,16 +107,13 @@ func New(deps Deps) *Bridge {
 		log:     deps.Log,
 		devices: make(map[string]*unit),
 		blocks:  make(map[string]*block),
-		sets:    make(map[int]design.ParameterSet),
+		sets:    make(map[int]*parameterSet),
 		states:  newStateCache(),
 	}
 	b.pending = newDebouncer(deps.Options.WriteDebounce)
 	for _, d := range deps.Design.Devices {
 		u := &unit{Device: d, topics: mqtt.ForDevice(d.NodeID)}
 		b.devices[d.NodeID] = u
-		if d.IsMain {
-			b.main = u
-		}
 	}
 	for _, blk := range deps.Design.Blocks {
 		u, ok := b.devices[blk.DeviceNodeID]
@@ -107,7 +125,14 @@ func New(deps Deps) *Bridge {
 		u.blocks = append(u.blocks, bl)
 	}
 	for _, ps := range deps.Design.ParameterSets {
-		b.sets[ps.ID] = ps
+		set := &parameterSet{ParameterSet: ps}
+		for _, nodeID := range ps.Devices {
+			if u, ok := b.devices[nodeID]; ok {
+				set.targets = append(set.targets, u)
+				u.reportsParameterSet = true
+			}
+		}
+		b.sets[ps.ID] = set
 	}
 	return b
 }
@@ -128,7 +153,7 @@ func (b *Bridge) Start(ctx context.Context) error {
 
 	b.deps.MQTT.OnMessage(mqtt.NewRouter(mqtt.Actions{
 		LevelCommand:        b.LevelCommand,
-		MuteCommand:         b.MuteCommand,
+		SwitchCommand:       b.SwitchCommand,
 		RecallParameterSet:  b.RecallParameterSet,
 		HomeAssistantOnline: b.republish,
 	}, b.log))
@@ -150,6 +175,7 @@ func (b *Bridge) Start(ctx context.Context) error {
 	for _, u := range b.devices {
 		b.publishUnitState(ctx, u)
 	}
+	b.publishRecallAvailability(ctx)
 	b.logDesign()
 
 	for _, u := range b.devices {
@@ -172,6 +198,7 @@ func (b *Bridge) Stop(ctx context.Context) {
 		}
 		b.publishAvailability(ctx, u.topics.Availability, false)
 	}
+	b.publishRecallAvailability(ctx)
 	b.publishAvailability(ctx, mqtt.ControllerAvailability, false)
 	if err := b.deps.MQTT.Close(ctx); err != nil {
 		b.log.Warn("mqtt_close_failed", "error", err.Error())
@@ -184,8 +211,10 @@ func (b *Bridge) logDesign() {
 	for _, s := range d.Skipped {
 		b.log.Warn("block_skipped", "node_id", s.NodeID, "label", s.Label, "reason", s.Reason)
 	}
-	if b.main == nil {
-		b.log.Warn("no_main_device", "detail", "parameter sets cannot be recalled without a device flagged as main")
+	for _, ps := range d.ParameterSets {
+		if len(b.sets[ps.ID].targets) == 0 {
+			b.log.Warn("parameter_set_no_target_device", "id", ps.ID, "label", ps.Label)
+		}
 	}
 }
 
@@ -223,5 +252,8 @@ func (b *Bridge) stateHandler(u *unit) csp.StateHandler {
 		ctx, cancel := context.WithTimeout(context.WithoutCancel(b.ctx), 5*time.Second)
 		defer cancel()
 		b.publishUnitState(ctx, u)
+		if changed && u.reportsParameterSet {
+			b.publishRecallAvailability(ctx)
+		}
 	}
 }

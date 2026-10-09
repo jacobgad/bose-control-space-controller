@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -66,17 +67,22 @@ func (b *Bridge) LevelCommand(nodeID string, db float64) {
 	})
 }
 
-// MuteCommand sets a block's mute immediately, then reads it back.
-func (b *Bridge) MuteCommand(nodeID string, muted bool) {
+// SwitchCommand sets an on/off parameter immediately, then reads it back.
+func (b *Bridge) SwitchCommand(nodeID, name string, on bool) {
 	bl, ok := b.blocks[nodeID]
 	if !ok {
-		b.log.Warn("command_for_unknown_block", "node_id", nodeID, "parameter", "mute")
+		b.log.Warn("command_for_unknown_block", "node_id", nodeID, "parameter", name)
+		return
+	}
+	p, ok := bl.parameter(name)
+	if !ok {
+		b.log.Warn("command_for_unknown_parameter", "node_id", nodeID, "parameter", name)
 		return
 	}
 	b.wg.Add(1)
 	go func() {
 		defer b.wg.Done()
-		b.writeConfirmed(bl, "mute", csp.FormatOnOff(muted))
+		b.writeConfirmed(bl, name, p.encodeSwitch(on))
 	}()
 }
 
@@ -85,7 +91,7 @@ func (b *Bridge) writeConfirmed(bl *block, name, value string) {
 		return
 	}
 	p, ok := bl.parameter(name)
-	if !ok || !p.writeOK {
+	if !ok {
 		return
 	}
 	ctx, cancel := context.WithTimeout(b.ctx, 10*time.Second)
@@ -102,15 +108,16 @@ func (b *Bridge) writeConfirmed(bl *block, name, value string) {
 	log.Info("write_confirmed")
 }
 
-// RecallParameterSet sends SS n to the main device and refreshes the last-recalled sensor.
+// RecallParameterSet sends SS n to every unit the set writes to, so the set lands
+// on whichever of them are powered.
 func (b *Bridge) RecallParameterSet(id int) {
-	ps, ok := b.sets[id]
+	set, ok := b.sets[id]
 	if !ok {
 		b.log.Warn("parameter_set_unknown", "id", id)
 		return
 	}
-	if b.main == nil {
-		b.log.Warn("parameter_set_no_main_device", "id", id)
+	if len(set.targets) == 0 {
+		b.log.Warn("parameter_set_no_target_device", "id", id, "label", set.Label)
 		return
 	}
 	b.wg.Add(1)
@@ -121,21 +128,49 @@ func (b *Bridge) RecallParameterSet(id int) {
 		}
 		ctx, cancel := context.WithTimeout(b.ctx, 10*time.Second)
 		defer cancel()
-		log := b.log.With("id", id, "label", ps.Label)
-		if err := b.main.client.RecallParameterSet(ctx, id); err != nil {
-			log.Warn("parameter_set_recall_failed", "error", err.Error())
-			return
+		log := b.log.With("id", id, "label", set.Label)
+
+		results := make([]error, len(set.targets))
+		var wg sync.WaitGroup
+		for i, u := range set.targets {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				results[i] = b.recallOn(ctx, u, id)
+			}()
 		}
-		last, err := b.main.client.LastParameterSet(ctx)
-		if err != nil {
-			log.Warn("parameter_set_readback_failed", "error", err.Error())
-			return
+		wg.Wait()
+
+		var reached, missed []string
+		for i, u := range set.targets {
+			if results[i] != nil {
+				log.Warn("parameter_set_recall_failed", "device", u.Label, "error", results[i].Error())
+				missed = append(missed, u.Label)
+				continue
+			}
+			reached = append(reached, u.Label)
 		}
-		b.publishLastRecalled(ctx, last)
-		if last != id {
-			log.Warn("parameter_set_not_recalled", "reported", last)
-			return
+		switch {
+		case len(reached) == 0:
+			log.Warn("parameter_set_unreachable", "devices", missed)
+		case len(missed) > 0:
+			log.Warn("parameter_set_partial", "reached", reached, "missed", missed)
+		default:
+			log.Info("parameter_set_recalled", "devices", reached)
 		}
-		log.Info("parameter_set_recalled")
 	}()
+}
+
+func (b *Bridge) recallOn(ctx context.Context, u *unit, id int) error {
+	if err := u.client.RecallParameterSet(ctx, id); err != nil {
+		return err
+	}
+	last, err := b.readLastRecalled(ctx, u)
+	if err != nil {
+		return fmt.Errorf("readback: %w", err)
+	}
+	if last != id {
+		return fmt.Errorf("device reports set %d", last)
+	}
+	return nil
 }

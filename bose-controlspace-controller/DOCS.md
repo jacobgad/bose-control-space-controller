@@ -44,7 +44,7 @@ log_level: info
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `poll_interval_ms` | `2000` | How often every exposed parameter is re-read from the devices. 500–600000. |
-| `write_debounce_ms` | `300` | A level change from Home Assistant is sent once no newer value for that entity has arrived for this long. `0` disables. Mutes and buttons are never delayed. |
+| `write_debounce_ms` | `300` | A level change from Home Assistant is sent once no newer value for that entity has arrived for this long. `0` disables. Switches and buttons are never delayed. |
 | `log_level` | `info` | `debug` / `info` / `warn` / `error` |
 
 ## Devices and entities
@@ -53,12 +53,16 @@ Each physical unit is its own Home Assistant device, identified by its Designer 
 
 | Block | Entities |
 | --- | --- |
-| Gain (ESP) | **level** (number, dB, −60.5…+12) · **mute** (switch) |
-| Input (ESP) | **level** · **mute** · *preamp gain*, *phantom power* (diagnostic, read-only) |
-| Amp Output (PowerMatch) | **level** (dB, −60.5…0) · **mute** |
-| Parameter set | **Recall …** button on the main ESP · *Last recalled parameter set* (diagnostic) |
+| Gain (ESP) | **level** (number, dB, −60.5…+12) · **enabled** (switch) |
+| Input (ESP) | **level** · **enabled** · *phantom power* (switch, configuration) |
+| Amp Output (PowerMatch) | **level** (dB, −60.5…0) · **enabled** |
+| Parameter set | **Recall …** button on the controller device · *Last recalled parameter set* (diagnostic) on each unit the set writes to |
 
-The **Bose ControlSpace Controller** device carries a *Loaded design* sensor (Designer version, with the file name, counts and load time as attributes) and one *… connection* sensor per unit (`connected` / `disconnected`, with IP, port and last error as attributes).
+The **enabled** switch is the block's mute, inverted: on means audio passes. A dashboard of enabled switches therefore shows what is live. It is named after the block alone (`Wireless 1`); the level is `Wireless 1 level`.
+
+**Phantom power** is a real switch because the protocol allows it, but it sits in the device's *Configuration* section and is left off auto-generated dashboards: switching it on a line-level or wireless source can damage equipment.
+
+Recall buttons belong to the **Bose ControlSpace Controller** device rather than to any unit, because a set is one intent applied to several units; what each unit last recalled is a fact about that unit and lives on it. The controller device also carries a *Loaded design* sensor (Designer version, with the file name, counts and load time as attributes) and one *… connection* sensor per unit (`connected` / `disconnected`, with IP, port and last error as attributes).
 
 Entity names are the block labels from Designer, verbatim. Rename them in Home Assistant if you prefer; that is independent of the design file.
 
@@ -67,8 +71,10 @@ Entity names are the block labels from Designer, verbatim. Rename them in Home A
 Home Assistant is never the source of truth. The wall panels and the ControlSpace Remote app keep working; the add-on mirrors whatever the devices report.
 
 - A **level** change is debounced, sent as a module command, acknowledged by the device, **read back**, and only then published. Dragging a slider results in one write.
-- A **mute** change is sent immediately, acknowledged, read back, published.
-- A **Recall** button sends the system command to the main ESP and then asks it which set it last recalled. Parameter sets have no acknowledgement in the protocol, so this read-back is the only confirmation.
+- An **enabled** or **phantom power** change is sent immediately, acknowledged, read back, published.
+- A **Recall** button sends the system command to every unit that set writes to (worked out from the assignments in the `.csp`), then asks each which set it last recalled. Parameter sets have no acknowledgement in the protocol, so this read-back is the only confirmation. Units that are powered off are skipped and logged (`parameter_set_partial`); a button is *unavailable* only when none of its units is reachable.
+
+Each unit's *Last recalled parameter set* sensor shows what that unit last heard (`none` since power-up). After one building has been powered down and up, its units can lag the others until the next recall; the sensors show exactly which.
 
 Nothing is published optimistically. A value out of the block's range is rejected and logged (`level_out_of_range`) without contacting the device.
 
@@ -88,11 +94,12 @@ Prefix `bose/`. `<id>` is the six-digit Designer node ID.
 | `bose/controller/design/{state,attributes}` | loaded design version and metadata |
 | `bose/device/<id>/availability` | unit reachable |
 | `bose/device/<id>/connection/{state,attributes}` | connected/disconnected, ip, port, last_error |
-| `bose/device/<id>/parameter_set/{state,attributes}` | last recalled set (main ESP) |
+| `bose/device/<id>/parameter_set/{state,attributes}` | last recalled set on that unit |
 | `bose/block/<id>/level/{state,set}` | level in dB |
-| `bose/block/<id>/mute/{state,set}` | ON/OFF |
-| `bose/block/<id>/{gain,phantom}/state` | input diagnostics |
+| `bose/block/<id>/enabled/{state,set}` | ON = unmuted |
+| `bose/block/<id>/phantom/{state,set}` | ON/OFF (inputs) |
 | `bose/parameter_set/<n>/press` | recall button |
+| `bose/parameter_set/<n>/availability` | any unit the set writes to is reachable |
 
 Discovery configs under `homeassistant/<component>/bose_<id>/<object>/config`; device identifier `bose:<id>`; unique IDs `bose_<id>_<object>`. State is retained, commands are not, and retained messages are never acted on.
 
@@ -104,13 +111,16 @@ Discovery configs under `homeassistant/<component>/bose_<id>/<object>/config`; d
 | Upload rejected | The page shows the parser's reason. The file must be a ControlSpace Designer project containing at least one ESP or PowerMatch. |
 | Unit `disconnected`, `connection refused` / timeout | The HA host can't reach `<ip>:10055`. Static IPs are read from the design; confirm they match reality and that routing/firewall allow TCP 10055. |
 | `parameter_refused … NAK 01` | The device doesn't know that module label — the design on the device differs from the file you uploaded. Push the design from Designer or upload the matching `.csp`. |
-| `parameter_set_not_recalled` | The main ESP reported a different set than requested. Check the set is populated on the device. |
+| `parameter_set_recall_failed … device reports set n` | That unit reported a different set than requested. Check the set is populated on the device. |
+| `parameter_set_partial` / `parameter_set_unreachable` | Some or all of the units the set writes to were off. Units that were reached have applied it. |
+| `parameter_set_no_target_device` | The set's assignments don't touch any ESP or PowerMatch in the design (e.g. only a wall panel). |
 | Entities missing after a design change | Expected if the block was deleted and recreated (new node ID): the old entity is removed and a new one appears. |
 | `mqtt_publish_failed` / no entities | Mosquitto not running or the MQTT integration not configured. |
 
 ## Limitations
 
 - Polling only; the protocol's subscription feature is not used
-- Exposes Gain, ESP Input and Amp Output blocks and populated parameter sets; no ESP outputs, mixers, EQ, ControlSpace Groups, amp standby, metering or source selection
+- Exposes Gain, ESP Input and Amp Output blocks and populated parameter sets; no ESP outputs, mixers, EQ, ControlSpace Groups, Parameter Set Lists, amp standby, metering or source selection
+- Sending `SS`/`GS` to the units a set writes to rather than only the main relies on the protocol's statement that system commands may be sent to any unit involved in the construct; not yet validated on hardware
 - One design at a time
 - The device's stored design is not retrieved automatically (Designer protocol on port 10001 is undocumented)

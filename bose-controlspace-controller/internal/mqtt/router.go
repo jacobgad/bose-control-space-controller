@@ -10,13 +10,13 @@ import (
 // return quickly.
 type Actions struct {
 	LevelCommand        func(nodeID string, db float64)
-	MuteCommand         func(nodeID string, muted bool)
+	SwitchCommand       func(nodeID, parameter string, on bool)
 	RecallParameterSet  func(id int)
 	HomeAssistantOnline func()
 }
 
 // Subscriptions are the topics the bridge listens on.
-var Subscriptions = []string{BlockLevelSetWildcard, BlockMuteSetWildcard, ParameterSetWildcard, HAStatusTopic}
+var Subscriptions = []string{BlockLevelSetWildcard, BlockEnabledSetWildcard, BlockPhantomSetWildcard, ParameterSetWildcard, HAStatusTopic}
 
 // ParseOnOffPayload accepts ON/OFF (case-insensitive) and true/false.
 func ParseOnOffPayload(payload string) (bool, bool) {
@@ -34,22 +34,21 @@ func NewRouter(actions Actions, log *slog.Logger) MessageHandler {
 	return func(topic string, payload []byte) {
 		text := strings.TrimSpace(string(payload))
 		if cmd, ok := ParseBlockCommand(topic); ok {
-			switch cmd.Parameter {
-			case "level":
+			if cmd.Parameter == ParameterLevel {
 				db, err := strconv.ParseFloat(text, 64)
 				if err != nil {
 					log.Warn("level_command_invalid", "node_id", cmd.NodeID, "payload", text)
 					return
 				}
 				actions.LevelCommand(cmd.NodeID, db)
-			case "mute":
-				muted, ok := ParseOnOffPayload(text)
-				if !ok {
-					log.Warn("mute_command_invalid", "node_id", cmd.NodeID, "payload", text)
-					return
-				}
-				actions.MuteCommand(cmd.NodeID, muted)
+				return
 			}
+			on, ok := ParseOnOffPayload(text)
+			if !ok {
+				log.Warn("switch_command_invalid", "node_id", cmd.NodeID, "parameter", cmd.Parameter, "payload", text)
+				return
+			}
+			actions.SwitchCommand(cmd.NodeID, cmd.Parameter, on)
 			return
 		}
 		if id, ok := ParseParameterSetCommand(topic); ok {

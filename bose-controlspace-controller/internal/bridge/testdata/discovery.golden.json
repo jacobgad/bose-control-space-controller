@@ -10,184 +10,19 @@
         {
           "payload_available": "online",
           "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100001"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:flash",
-      "name": "Mic 1 phantom power",
-      "object_id": "bose_300001_phantom",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "payload_off": "OFF",
-      "payload_on": "ON",
-      "state_topic": "bose/block/300001/phantom/state",
-      "unique_id": "bose_300001_phantom"
-    },
-    "topic": "homeassistant/binary_sensor/bose_300001/phantom/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100001"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:flash",
-      "name": "Mic 2 phantom power",
-      "object_id": "bose_300002_phantom",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "payload_off": "OFF",
-      "payload_on": "ON",
-      "state_topic": "bose/block/300002/phantom/state",
-      "unique_id": "bose_300002_phantom"
-    },
-    "topic": "homeassistant/binary_sensor/bose_300002/phantom/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100001"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:flash",
-      "name": "Playback phantom power",
-      "object_id": "bose_300003_phantom",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "payload_off": "OFF",
-      "payload_on": "ON",
-      "state_topic": "bose/block/300003/phantom/state",
-      "unique_id": "bose_300003_phantom"
-    },
-    "topic": "homeassistant/binary_sensor/bose_300003/phantom/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/device/100002/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100002"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-1600",
-        "name": "ESP Annex",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:flash",
-      "name": "Annex Mic phantom power",
-      "object_id": "bose_300004_phantom",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "payload_off": "OFF",
-      "payload_on": "ON",
-      "state_topic": "bose/block/300004/phantom/state",
-      "unique_id": "bose_300004_phantom"
-    },
-    "topic": "homeassistant/binary_sensor/bose_300004/phantom/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
+          "topic": "bose/parameter_set/1/availability"
         }
       ],
       "availability_mode": "all",
       "command_topic": "bose/parameter_set/1/press",
       "device": {
         "identifiers": [
-          "bose:100001"
+          "bose:controller"
         ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
+        "manufacturer": "bose-controlspace-controller add-on",
+        "model": "ControlSpace MQTT bridge",
+        "name": "Bose ControlSpace Controller",
+        "sw_version": "test"
       },
       "icon": "mdi:playlist-play",
       "name": "Recall Service",
@@ -215,20 +50,19 @@
         {
           "payload_available": "online",
           "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
+          "topic": "bose/parameter_set/2/availability"
         }
       ],
       "availability_mode": "all",
       "command_topic": "bose/parameter_set/2/press",
       "device": {
         "identifiers": [
-          "bose:100001"
+          "bose:controller"
         ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
+        "manufacturer": "bose-controlspace-controller add-on",
+        "model": "ControlSpace MQTT bridge",
+        "name": "Bose ControlSpace Controller",
+        "sw_version": "test"
       },
       "icon": "mdi:playlist-play",
       "name": "Recall Concert",
@@ -256,20 +90,19 @@
         {
           "payload_available": "online",
           "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
+          "topic": "bose/parameter_set/3/availability"
         }
       ],
       "availability_mode": "all",
       "command_topic": "bose/parameter_set/3/press",
       "device": {
         "identifiers": [
-          "bose:100001"
+          "bose:controller"
         ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
+        "manufacturer": "bose-controlspace-controller add-on",
+        "model": "ControlSpace MQTT bridge",
+        "name": "Bose ControlSpace Controller",
+        "sw_version": "test"
       },
       "icon": "mdi:playlist-play",
       "name": "Recall Rehearsal",
@@ -854,126 +687,6 @@
         {
           "payload_available": "online",
           "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100001"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:microphone-settings",
-      "name": "Mic 1 preamp gain",
-      "object_id": "bose_300001_gain",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "state_topic": "bose/block/300001/gain/state",
-      "unique_id": "bose_300001_gain",
-      "unit_of_measurement": "dB"
-    },
-    "topic": "homeassistant/sensor/bose_300001/gain/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100001"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:microphone-settings",
-      "name": "Mic 2 preamp gain",
-      "object_id": "bose_300002_gain",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "state_topic": "bose/block/300002/gain/state",
-      "unique_id": "bose_300002_gain",
-      "unit_of_measurement": "dB"
-    },
-    "topic": "homeassistant/sensor/bose_300002/gain/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/device/100001/availability"
-        }
-      ],
-      "availability_mode": "all",
-      "device": {
-        "identifiers": [
-          "bose:100001"
-        ],
-        "manufacturer": "Bose Professional",
-        "model": "ESP-880",
-        "name": "ESP Main",
-        "sw_version": "v4.100",
-        "via_device": "bose:controller"
-      },
-      "entity_category": "diagnostic",
-      "icon": "mdi:microphone-settings",
-      "name": "Playback preamp gain",
-      "object_id": "bose_300003_gain",
-      "origin": {
-        "name": "Bose ControlSpace Controller",
-        "support_url": "https://example.invalid",
-        "sw_version": "test"
-      },
-      "state_topic": "bose/block/300003/gain/state",
-      "unique_id": "bose_300003_gain",
-      "unit_of_measurement": "dB"
-    },
-    "topic": "homeassistant/sensor/bose_300003/gain/config"
-  },
-  {
-    "payload": {
-      "availability": [
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
-          "topic": "bose/controller/availability"
-        },
-        {
-          "payload_available": "online",
-          "payload_not_available": "offline",
           "topic": "bose/device/100002/availability"
         }
       ],
@@ -989,19 +702,19 @@
         "via_device": "bose:controller"
       },
       "entity_category": "diagnostic",
-      "icon": "mdi:microphone-settings",
-      "name": "Annex Mic preamp gain",
-      "object_id": "bose_300004_gain",
+      "icon": "mdi:playlist-check",
+      "json_attributes_topic": "bose/device/100002/parameter_set/attributes",
+      "name": "Last recalled parameter set",
+      "object_id": "bose_100002_last_parameter_set",
       "origin": {
         "name": "Bose ControlSpace Controller",
         "support_url": "https://example.invalid",
         "sw_version": "test"
       },
-      "state_topic": "bose/block/300004/gain/state",
-      "unique_id": "bose_300004_gain",
-      "unit_of_measurement": "dB"
+      "state_topic": "bose/device/100002/parameter_set/state",
+      "unique_id": "bose_100002_last_parameter_set"
     },
-    "topic": "homeassistant/sensor/bose_300004/gain/config"
+    "topic": "homeassistant/sensor/bose_100002/last_parameter_set/config"
   },
   {
     "payload": {
@@ -1183,7 +896,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/200001/mute/set",
+      "command_topic": "bose/block/200001/enabled/set",
       "device": {
         "identifiers": [
           "bose:100001"
@@ -1194,9 +907,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Hall mute",
-      "object_id": "bose_200001_mute",
+      "icon": "mdi:speaker",
+      "name": "Hall",
+      "object_id": "bose_200001_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1207,10 +920,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/200001/mute/state",
-      "unique_id": "bose_200001_mute"
+      "state_topic": "bose/block/200001/enabled/state",
+      "unique_id": "bose_200001_enabled"
     },
-    "topic": "homeassistant/switch/bose_200001/mute/config"
+    "topic": "homeassistant/switch/bose_200001/enabled/config"
   },
   {
     "payload": {
@@ -1227,7 +940,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/200002/mute/set",
+      "command_topic": "bose/block/200002/enabled/set",
       "device": {
         "identifiers": [
           "bose:100001"
@@ -1238,9 +951,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Foyer mute",
-      "object_id": "bose_200002_mute",
+      "icon": "mdi:speaker",
+      "name": "Foyer",
+      "object_id": "bose_200002_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1251,10 +964,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/200002/mute/state",
-      "unique_id": "bose_200002_mute"
+      "state_topic": "bose/block/200002/enabled/state",
+      "unique_id": "bose_200002_enabled"
     },
-    "topic": "homeassistant/switch/bose_200002/mute/config"
+    "topic": "homeassistant/switch/bose_200002/enabled/config"
   },
   {
     "payload": {
@@ -1271,7 +984,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/200003/mute/set",
+      "command_topic": "bose/block/200003/enabled/set",
       "device": {
         "identifiers": [
           "bose:100001"
@@ -1282,9 +995,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Stage mute",
-      "object_id": "bose_200003_mute",
+      "icon": "mdi:speaker",
+      "name": "Stage",
+      "object_id": "bose_200003_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1295,10 +1008,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/200003/mute/state",
-      "unique_id": "bose_200003_mute"
+      "state_topic": "bose/block/200003/enabled/state",
+      "unique_id": "bose_200003_enabled"
     },
-    "topic": "homeassistant/switch/bose_200003/mute/config"
+    "topic": "homeassistant/switch/bose_200003/enabled/config"
   },
   {
     "payload": {
@@ -1315,7 +1028,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/200004/mute/set",
+      "command_topic": "bose/block/200004/enabled/set",
       "device": {
         "identifiers": [
           "bose:100002"
@@ -1326,9 +1039,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Annex mute",
-      "object_id": "bose_200004_mute",
+      "icon": "mdi:speaker",
+      "name": "Annex",
+      "object_id": "bose_200004_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1339,10 +1052,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/200004/mute/state",
-      "unique_id": "bose_200004_mute"
+      "state_topic": "bose/block/200004/enabled/state",
+      "unique_id": "bose_200004_enabled"
     },
-    "topic": "homeassistant/switch/bose_200004/mute/config"
+    "topic": "homeassistant/switch/bose_200004/enabled/config"
   },
   {
     "payload": {
@@ -1359,7 +1072,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/300001/mute/set",
+      "command_topic": "bose/block/300001/enabled/set",
       "device": {
         "identifiers": [
           "bose:100001"
@@ -1370,9 +1083,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Mic 1 mute",
-      "object_id": "bose_300001_mute",
+      "icon": "mdi:microphone",
+      "name": "Mic 1",
+      "object_id": "bose_300001_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1383,10 +1096,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/300001/mute/state",
-      "unique_id": "bose_300001_mute"
+      "state_topic": "bose/block/300001/enabled/state",
+      "unique_id": "bose_300001_enabled"
     },
-    "topic": "homeassistant/switch/bose_300001/mute/config"
+    "topic": "homeassistant/switch/bose_300001/enabled/config"
   },
   {
     "payload": {
@@ -1403,7 +1116,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/300002/mute/set",
+      "command_topic": "bose/block/300001/phantom/set",
       "device": {
         "identifiers": [
           "bose:100001"
@@ -1414,9 +1127,10 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Mic 2 mute",
-      "object_id": "bose_300002_mute",
+      "entity_category": "config",
+      "icon": "mdi:flash",
+      "name": "Mic 1 phantom power",
+      "object_id": "bose_300001_phantom",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1427,10 +1141,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/300002/mute/state",
-      "unique_id": "bose_300002_mute"
+      "state_topic": "bose/block/300001/phantom/state",
+      "unique_id": "bose_300001_phantom"
     },
-    "topic": "homeassistant/switch/bose_300002/mute/config"
+    "topic": "homeassistant/switch/bose_300001/phantom/config"
   },
   {
     "payload": {
@@ -1447,7 +1161,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/300003/mute/set",
+      "command_topic": "bose/block/300002/enabled/set",
       "device": {
         "identifiers": [
           "bose:100001"
@@ -1458,9 +1172,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Playback mute",
-      "object_id": "bose_300003_mute",
+      "icon": "mdi:microphone",
+      "name": "Mic 2",
+      "object_id": "bose_300002_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1471,10 +1185,144 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/300003/mute/state",
-      "unique_id": "bose_300003_mute"
+      "state_topic": "bose/block/300002/enabled/state",
+      "unique_id": "bose_300002_enabled"
     },
-    "topic": "homeassistant/switch/bose_300003/mute/config"
+    "topic": "homeassistant/switch/bose_300002/enabled/config"
+  },
+  {
+    "payload": {
+      "availability": [
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/controller/availability"
+        },
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/device/100001/availability"
+        }
+      ],
+      "availability_mode": "all",
+      "command_topic": "bose/block/300002/phantom/set",
+      "device": {
+        "identifiers": [
+          "bose:100001"
+        ],
+        "manufacturer": "Bose Professional",
+        "model": "ESP-880",
+        "name": "ESP Main",
+        "sw_version": "v4.100",
+        "via_device": "bose:controller"
+      },
+      "entity_category": "config",
+      "icon": "mdi:flash",
+      "name": "Mic 2 phantom power",
+      "object_id": "bose_300002_phantom",
+      "optimistic": false,
+      "origin": {
+        "name": "Bose ControlSpace Controller",
+        "support_url": "https://example.invalid",
+        "sw_version": "test"
+      },
+      "payload_off": "OFF",
+      "payload_on": "ON",
+      "qos": 1,
+      "retain": false,
+      "state_topic": "bose/block/300002/phantom/state",
+      "unique_id": "bose_300002_phantom"
+    },
+    "topic": "homeassistant/switch/bose_300002/phantom/config"
+  },
+  {
+    "payload": {
+      "availability": [
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/controller/availability"
+        },
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/device/100001/availability"
+        }
+      ],
+      "availability_mode": "all",
+      "command_topic": "bose/block/300003/enabled/set",
+      "device": {
+        "identifiers": [
+          "bose:100001"
+        ],
+        "manufacturer": "Bose Professional",
+        "model": "ESP-880",
+        "name": "ESP Main",
+        "sw_version": "v4.100",
+        "via_device": "bose:controller"
+      },
+      "icon": "mdi:microphone",
+      "name": "Playback",
+      "object_id": "bose_300003_enabled",
+      "optimistic": false,
+      "origin": {
+        "name": "Bose ControlSpace Controller",
+        "support_url": "https://example.invalid",
+        "sw_version": "test"
+      },
+      "payload_off": "OFF",
+      "payload_on": "ON",
+      "qos": 1,
+      "retain": false,
+      "state_topic": "bose/block/300003/enabled/state",
+      "unique_id": "bose_300003_enabled"
+    },
+    "topic": "homeassistant/switch/bose_300003/enabled/config"
+  },
+  {
+    "payload": {
+      "availability": [
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/controller/availability"
+        },
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/device/100001/availability"
+        }
+      ],
+      "availability_mode": "all",
+      "command_topic": "bose/block/300003/phantom/set",
+      "device": {
+        "identifiers": [
+          "bose:100001"
+        ],
+        "manufacturer": "Bose Professional",
+        "model": "ESP-880",
+        "name": "ESP Main",
+        "sw_version": "v4.100",
+        "via_device": "bose:controller"
+      },
+      "entity_category": "config",
+      "icon": "mdi:flash",
+      "name": "Playback phantom power",
+      "object_id": "bose_300003_phantom",
+      "optimistic": false,
+      "origin": {
+        "name": "Bose ControlSpace Controller",
+        "support_url": "https://example.invalid",
+        "sw_version": "test"
+      },
+      "payload_off": "OFF",
+      "payload_on": "ON",
+      "qos": 1,
+      "retain": false,
+      "state_topic": "bose/block/300003/phantom/state",
+      "unique_id": "bose_300003_phantom"
+    },
+    "topic": "homeassistant/switch/bose_300003/phantom/config"
   },
   {
     "payload": {
@@ -1491,7 +1339,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/300004/mute/set",
+      "command_topic": "bose/block/300004/enabled/set",
       "device": {
         "identifiers": [
           "bose:100002"
@@ -1502,9 +1350,9 @@
         "sw_version": "v4.100",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Annex Mic mute",
-      "object_id": "bose_300004_mute",
+      "icon": "mdi:microphone",
+      "name": "Annex Mic",
+      "object_id": "bose_300004_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1515,10 +1363,55 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/300004/mute/state",
-      "unique_id": "bose_300004_mute"
+      "state_topic": "bose/block/300004/enabled/state",
+      "unique_id": "bose_300004_enabled"
     },
-    "topic": "homeassistant/switch/bose_300004/mute/config"
+    "topic": "homeassistant/switch/bose_300004/enabled/config"
+  },
+  {
+    "payload": {
+      "availability": [
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/controller/availability"
+        },
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/device/100002/availability"
+        }
+      ],
+      "availability_mode": "all",
+      "command_topic": "bose/block/300004/phantom/set",
+      "device": {
+        "identifiers": [
+          "bose:100002"
+        ],
+        "manufacturer": "Bose Professional",
+        "model": "ESP-1600",
+        "name": "ESP Annex",
+        "sw_version": "v4.100",
+        "via_device": "bose:controller"
+      },
+      "entity_category": "config",
+      "icon": "mdi:flash",
+      "name": "Annex Mic phantom power",
+      "object_id": "bose_300004_phantom",
+      "optimistic": false,
+      "origin": {
+        "name": "Bose ControlSpace Controller",
+        "support_url": "https://example.invalid",
+        "sw_version": "test"
+      },
+      "payload_off": "OFF",
+      "payload_on": "ON",
+      "qos": 1,
+      "retain": false,
+      "state_topic": "bose/block/300004/phantom/state",
+      "unique_id": "bose_300004_phantom"
+    },
+    "topic": "homeassistant/switch/bose_300004/phantom/config"
   },
   {
     "payload": {
@@ -1535,7 +1428,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/500001/mute/set",
+      "command_topic": "bose/block/500001/enabled/set",
       "device": {
         "identifiers": [
           "bose:100003"
@@ -1546,9 +1439,9 @@
         "sw_version": "v4.200",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Hall L R mute",
-      "object_id": "bose_500001_mute",
+      "icon": "mdi:amplifier",
+      "name": "Hall L R",
+      "object_id": "bose_500001_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1559,10 +1452,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/500001/mute/state",
-      "unique_id": "bose_500001_mute"
+      "state_topic": "bose/block/500001/enabled/state",
+      "unique_id": "bose_500001_enabled"
     },
-    "topic": "homeassistant/switch/bose_500001/mute/config"
+    "topic": "homeassistant/switch/bose_500001/enabled/config"
   },
   {
     "payload": {
@@ -1579,7 +1472,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/500002/mute/set",
+      "command_topic": "bose/block/500002/enabled/set",
       "device": {
         "identifiers": [
           "bose:100003"
@@ -1590,9 +1483,9 @@
         "sw_version": "v4.200",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Foyer mute",
-      "object_id": "bose_500002_mute",
+      "icon": "mdi:amplifier",
+      "name": "Foyer",
+      "object_id": "bose_500002_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1603,10 +1496,10 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/500002/mute/state",
-      "unique_id": "bose_500002_mute"
+      "state_topic": "bose/block/500002/enabled/state",
+      "unique_id": "bose_500002_enabled"
     },
-    "topic": "homeassistant/switch/bose_500002/mute/config"
+    "topic": "homeassistant/switch/bose_500002/enabled/config"
   },
   {
     "payload": {
@@ -1623,7 +1516,7 @@
         }
       ],
       "availability_mode": "all",
-      "command_topic": "bose/block/500003/mute/set",
+      "command_topic": "bose/block/500003/enabled/set",
       "device": {
         "identifiers": [
           "bose:100004"
@@ -1634,9 +1527,9 @@
         "sw_version": "v4.200",
         "via_device": "bose:controller"
       },
-      "icon": "mdi:volume-off",
-      "name": "Annex Spkrs mute",
-      "object_id": "bose_500003_mute",
+      "icon": "mdi:amplifier",
+      "name": "Annex Spkrs",
+      "object_id": "bose_500003_enabled",
       "optimistic": false,
       "origin": {
         "name": "Bose ControlSpace Controller",
@@ -1647,9 +1540,9 @@
       "payload_on": "ON",
       "qos": 1,
       "retain": false,
-      "state_topic": "bose/block/500003/mute/state",
-      "unique_id": "bose_500003_mute"
+      "state_topic": "bose/block/500003/enabled/state",
+      "unique_id": "bose_500003_enabled"
     },
-    "topic": "homeassistant/switch/bose_500003/mute/config"
+    "topic": "homeassistant/switch/bose_500003/enabled/config"
   }
 ]

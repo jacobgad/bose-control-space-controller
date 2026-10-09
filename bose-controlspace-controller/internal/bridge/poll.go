@@ -3,7 +3,6 @@ package bridge
 import (
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/jacobgad/bose-control-space-controller/internal/csp"
@@ -12,11 +11,15 @@ import (
 )
 
 type parameter struct {
-	name    string
-	index   int
-	topic   func(mqtt.BlockTopics) string
-	render  func(raw string) (string, error)
-	writeOK bool
+	name     string
+	index    int
+	topic    func(mqtt.BlockTopics) string
+	render   func(raw string) (string, error)
+	inverted bool
+}
+
+func (p parameter) encodeSwitch(on bool) string {
+	return csp.FormatOnOff(on != p.inverted)
 }
 
 func renderLevel(raw string) (string, error) {
@@ -35,25 +38,30 @@ func renderOnOff(raw string) (string, error) {
 	return mqtt.FormatOnOff(on), nil
 }
 
-func renderText(raw string) (string, error) {
-	return strings.TrimSpace(raw), nil
+func renderInverted(raw string) (string, error) {
+	on, err := csp.ParseOnOff(raw)
+	if err != nil {
+		return "", err
+	}
+	return mqtt.FormatOnOff(!on), nil
+}
+
+func levelParameter(index int) parameter {
+	return parameter{name: mqtt.ParameterLevel, index: index, topic: func(t mqtt.BlockTopics) string { return t.LevelState }, render: renderLevel}
+}
+
+func enabledParameter(muteIndex int) parameter {
+	return parameter{name: mqtt.ParameterEnabled, index: muteIndex, topic: func(t mqtt.BlockTopics) string { return t.EnabledState }, render: renderInverted, inverted: true}
 }
 
 var parametersByKind = map[design.BlockKind][]parameter{
-	design.KindGain: {
-		{name: "level", index: csp.GainLevel, topic: func(t mqtt.BlockTopics) string { return t.LevelState }, render: renderLevel, writeOK: true},
-		{name: "mute", index: csp.GainMute, topic: func(t mqtt.BlockTopics) string { return t.MuteState }, render: renderOnOff, writeOK: true},
-	},
+	design.KindGain: {levelParameter(csp.GainLevel), enabledParameter(csp.GainMute)},
 	design.KindInput: {
-		{name: "level", index: csp.InputLevel, topic: func(t mqtt.BlockTopics) string { return t.LevelState }, render: renderLevel, writeOK: true},
-		{name: "mute", index: csp.InputMute, topic: func(t mqtt.BlockTopics) string { return t.MuteState }, render: renderOnOff, writeOK: true},
-		{name: "gain", index: csp.InputGain, topic: func(t mqtt.BlockTopics) string { return t.GainState }, render: renderText},
-		{name: "phantom", index: csp.InputPhantom, topic: func(t mqtt.BlockTopics) string { return t.PhantomState }, render: renderOnOff},
+		levelParameter(csp.InputLevel),
+		enabledParameter(csp.InputMute),
+		{name: mqtt.ParameterPhantom, index: csp.InputPhantom, topic: func(t mqtt.BlockTopics) string { return t.PhantomState }, render: renderOnOff},
 	},
-	design.KindAmpOutput: {
-		{name: "level", index: csp.AmpOutputLevel, topic: func(t mqtt.BlockTopics) string { return t.LevelState }, render: renderLevel, writeOK: true},
-		{name: "mute", index: csp.AmpOutputMute, topic: func(t mqtt.BlockTopics) string { return t.MuteState }, render: renderOnOff, writeOK: true},
-	},
+	design.KindAmpOutput: {levelParameter(csp.AmpOutputLevel), enabledParameter(csp.AmpOutputMute)},
 }
 
 func (bl *block) parameter(name string) (parameter, bool) {
@@ -95,12 +103,10 @@ func (b *Bridge) pollUnit(u *unit) {
 			}
 		}
 	}
-	if u == b.main && len(b.sets) > 0 {
-		id, err := u.client.LastParameterSet(ctx)
-		if err != nil {
+	if u.reportsParameterSet {
+		if _, err := b.readLastRecalled(ctx, u); err != nil {
 			return
 		}
-		b.publishLastRecalled(ctx, id)
 	}
 }
 
@@ -121,6 +127,15 @@ func (b *Bridge) readParameter(ctx context.Context, bl *block, p parameter) erro
 	bl.recovered(b, p.name)
 	b.publish(ctx, p.topic(bl.topics), rendered)
 	return nil
+}
+
+func (b *Bridge) readLastRecalled(ctx context.Context, u *unit) (int, error) {
+	id, err := u.client.LastParameterSet(ctx)
+	if err != nil {
+		return 0, err
+	}
+	b.publishLastRecalled(ctx, u, id)
+	return id, nil
 }
 
 func (bl *block) failOnce(b *Bridge, param, event string, err error) {

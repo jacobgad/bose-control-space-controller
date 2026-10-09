@@ -138,7 +138,6 @@ func seed(dev *testutil.FakeDevice, blk design.Block) {
 		dev.SetModule(blk.Label, csp.GainLevel, "-2.0")
 		dev.SetModule(blk.Label, csp.GainMute, "F")
 	case design.KindInput:
-		dev.SetModule(blk.Label, csp.InputGain, "44")
 		dev.SetModule(blk.Label, csp.InputLevel, "0.0")
 		dev.SetModule(blk.Label, csp.InputMute, "F")
 		dev.SetModule(blk.Label, csp.InputPhantom, "O")
@@ -179,6 +178,16 @@ func eventually(t *testing.T, cond func() bool, what string) {
 func (h *harness) waitPayload(t *testing.T, topic, want string) {
 	t.Helper()
 	eventually(t, func() bool { return h.mqtt.LastPayload(topic) == want }, topic+" == "+want+" (last: "+h.mqtt.LastPayload(topic)+")")
+}
+
+func availabilityTopics(config map[string]any) []string {
+	entries, _ := config["availability"].([]any)
+	out := make([]string, 0, len(entries))
+	for _, e := range entries {
+		m, _ := e.(map[string]any)
+		out = append(out, m["topic"].(string))
+	}
+	return out
 }
 
 func countCommands(cmds []string, prefix string) int {

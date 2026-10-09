@@ -35,8 +35,8 @@ Speaks the documented [ControlSpace Serial Control Protocol v5.13](https://asset
 
 | Command | Purpose |
 | --- | --- |
-| `GA "Label">n` / `SA "Label">n=v` | read / write a module parameter (Gain 1,2 · Input 2,3,4,5 · Amp Output 1,2) |
-| `SS n` / `GS` | recall / query parameter set (main ESP only) |
+| `GA "Label">n` / `SA "Label">n=v` | read / write a module parameter (Gain 1,2 · Input 3,4,5 · Amp Output 1,2) |
+| `SS n` / `GS` | recall / query parameter set, sent to every unit the set writes to |
 
 Developed against the protocol document; **not yet validated on hardware**. Run with `log_level: debug` on first contact: every command and response is logged, so ACK framing and response formats can be checked against the emulator in `internal/testutil/fakedevice.go`.
 

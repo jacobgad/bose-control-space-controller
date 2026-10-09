@@ -82,10 +82,7 @@ func (b *Bridge) publishUnitState(ctx context.Context, u *unit) {
 	b.publish(ctx, u.topics.ConnectionAttributes, string(data))
 }
 
-func (b *Bridge) publishLastRecalled(ctx context.Context, id int) {
-	if b.main == nil {
-		return
-	}
+func (b *Bridge) publishLastRecalled(ctx context.Context, u *unit, id int) {
 	label := mqtt.PayloadNone
 	if ps, ok := b.sets[id]; ok {
 		label = ps.Label
@@ -93,8 +90,14 @@ func (b *Bridge) publishLastRecalled(ctx context.Context, id int) {
 		label = "Parameter set " + strconv.Itoa(id)
 	}
 	attrs, _ := json.Marshal(map[string]any{"id": id})
-	b.publish(ctx, b.main.topics.ParameterSetState, label)
-	b.publish(ctx, b.main.topics.ParameterSetAttrs, string(attrs))
+	b.publish(ctx, u.topics.ParameterSetState, label)
+	b.publish(ctx, u.topics.ParameterSetAttrs, string(attrs))
+}
+
+func (b *Bridge) publishRecallAvailability(ctx context.Context) {
+	for _, ps := range b.sets {
+		b.publishAvailability(ctx, mqtt.ParameterSetButtonAvailability(ps.ID), ps.reachable())
+	}
 }
 
 func (b *Bridge) publishDiscovery(ctx context.Context) error {

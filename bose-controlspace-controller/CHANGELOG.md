@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0
+
+Entity model reworked for dashboards. Entity IDs change; there is no migration.
+
+- **`enabled` switch replaces `mute`.** On means audio passes. Named after the block alone (`Wireless 1`), icon by kind (microphone / speaker / amplifier). Topics `bose/block/<id>/enabled/{state,set}`.
+- **Phantom power is a switch** (configuration category) instead of a read-only binary sensor.
+- **Preamp gain sensor removed.**
+- **Recall buttons moved to the controller device.** Recall now goes to every unit the set writes to (from the `.csp` assignments) instead of only the main, so a set still lands when the main unit's building is powered off. Buttons are unavailable only when none of their units is reachable; partial recalls are logged (`parameter_set_partial`).
+- *Last recalled parameter set* is now one diagnostic sensor per unit a set writes to, on that unit, instead of one on the main.
+
 ## 0.2.2
 
 - Accept the `;` that ESP and PowerMatch firmware append to `GA` responses (`GA"Wireless 1">3=0.0;`). Previously every level/mute/phantom read was logged as `parameter_unparseable` and never published.

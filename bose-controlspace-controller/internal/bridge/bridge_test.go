@@ -2,6 +2,7 @@ package bridge_test
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -20,8 +21,8 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 		t.Fatal("controller availability not online")
 	}
 	configs := h.mqtt.DiscoveryConfigs()
-	const gains, inputs, ampOutputs, buttons, lastRecalled, designSensor, connections = 4, 4, 3, 3, 1, 1, 4
-	if want := gains*2 + inputs*4 + ampOutputs*2 + buttons + lastRecalled + designSensor + connections; len(configs) != want {
+	const gains, inputs, ampOutputs, buttons, lastRecalled, designSensor, connections = 4, 4, 3, 3, 2, 1, 4
+	if want := gains*2 + inputs*3 + ampOutputs*2 + buttons + lastRecalled + designSensor + connections; len(configs) != want {
 		t.Fatalf("discovery configs = %d, want %d", len(configs), want)
 	}
 	level := configs["homeassistant/number/bose_"+hallGain+"/level/config"]
@@ -36,8 +37,36 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 	if amp["max"] != 0.0 {
 		t.Fatalf("amp output max = %v", amp["max"])
 	}
-	if _, ok := configs["homeassistant/button/bose_700002/recall/config"]; !ok {
-		t.Fatal("missing Concert recall button")
+	enabled := configs["homeassistant/switch/bose_"+hallGain+"/enabled/config"]
+	if enabled["name"] != "Hall" || enabled["icon"] != "mdi:speaker" || enabled["command_topic"] != "bose/block/"+hallGain+"/enabled/set" {
+		t.Fatalf("Hall enabled config = %v", enabled)
+	}
+	if icon := configs["homeassistant/switch/bose_"+annexMic+"/enabled/config"]["icon"]; icon != "mdi:microphone" {
+		t.Fatalf("input enabled icon = %v", icon)
+	}
+	phantom := configs["homeassistant/switch/bose_"+annexMic+"/phantom/config"]
+	if phantom["entity_category"] != "config" || phantom["command_topic"] != "bose/block/"+annexMic+"/phantom/set" {
+		t.Fatalf("phantom config = %v", phantom)
+	}
+	if _, ok := configs["homeassistant/sensor/bose_"+annexMic+"/gain/config"]; ok {
+		t.Fatal("preamp gain must not be exposed")
+	}
+	recall := configs["homeassistant/button/bose_700003/recall/config"]
+	if recall == nil {
+		t.Fatal("missing Rehearsal recall button")
+	}
+	if dev := recall["device"].(map[string]any); dev["identifiers"].([]any)[0] != mqttpkg.ControllerIdentifier {
+		t.Fatalf("recall button device = %v", dev)
+	}
+	if topics := availabilityTopics(recall); len(topics) != 2 || topics[1] != mqttpkg.ParameterSetButtonAvailability(3) {
+		t.Fatalf("recall button availability = %v", topics)
+	}
+	last := configs["homeassistant/sensor/bose_"+espAnnex+"/last_parameter_set/config"]
+	if last == nil || last["state_topic"] != mqttpkg.ForDevice(espAnnex).ParameterSetState {
+		t.Fatalf("annex last recalled sensor = %v", last)
+	}
+	if _, ok := configs["homeassistant/sensor/bose_"+ampMain+"/last_parameter_set/config"]; ok {
+		t.Fatal("units no set writes to must not get a last recalled sensor")
 	}
 	if _, ok := configs["homeassistant/sensor/bose_controller/connection_"+espAnnex+"/config"]; !ok {
 		t.Fatal("missing ESP Annex connection sensor")
@@ -64,15 +93,23 @@ func TestPollPublishesDeviceStateOnChangeOnly(t *testing.T) {
 
 	hall := h.block(hallGain)
 	h.waitPayload(t, hall.LevelState, "-2")
-	h.waitPayload(t, hall.MuteState, "OFF")
+	h.waitPayload(t, hall.EnabledState, "ON")
 	in := h.block(annexMic)
 	h.waitPayload(t, in.LevelState, "0")
-	h.waitPayload(t, in.GainState, "44")
 	h.waitPayload(t, in.PhantomState, "ON")
 	h.waitPayload(t, h.block(hallAmp).LevelState, "-16")
 	h.waitPayload(t, mqttpkg.ForDevice(espMain).Availability, "online")
 	h.waitPayload(t, mqttpkg.ForDevice(espMain).ConnectionState, "connected")
 	h.waitPayload(t, mqttpkg.ForDevice(espMain).ParameterSetState, "none")
+	h.waitPayload(t, mqttpkg.ParameterSetButtonAvailability(3), "online")
+	if cmds := h.device(ampMain).Commands(); countCommands(cmds, "GS") != 0 {
+		t.Fatal("units no set writes to must not be asked for their last recalled set")
+	}
+	for _, c := range h.device(espAnnex).Commands() {
+		if strings.HasPrefix(c, `GA "Annex Mic">`+strconv.Itoa(csp.InputGain)) {
+			t.Fatal("preamp gain must not be polled")
+		}
+	}
 
 	time.Sleep(120 * time.Millisecond)
 	if n := len(h.mqtt.MessagesOn(hall.LevelState)); n != 1 {
@@ -95,7 +132,7 @@ func TestOutOfBandChangesAreMirrored(t *testing.T) {
 	h.device(espMain).SetParameterSet(2)
 
 	h.waitPayload(t, hall.LevelState, "-7.5")
-	h.waitPayload(t, hall.MuteState, "ON")
+	h.waitPayload(t, hall.EnabledState, "OFF")
 	h.waitPayload(t, mqttpkg.ForDevice(espMain).ParameterSetState, "Concert")
 	h.waitPayload(t, mqttpkg.ForDevice(espMain).ParameterSetAttrs, `{"id":2}`)
 	if countCommands(h.device(espMain).Commands(), "SA") != 0 {
@@ -134,20 +171,39 @@ func TestLevelCommandIsDebouncedThenConfirmedByReadback(t *testing.T) {
 	}
 }
 
-func TestMuteCommandIsImmediate(t *testing.T) {
+func TestEnabledCommandIsImmediateAndInvertsMute(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, harnessOptions{debounce: 500 * time.Millisecond})
 	h.start(t)
 	rf := h.block(hallAmp)
-	h.waitPayload(t, rf.MuteState, "OFF")
+	h.waitPayload(t, rf.EnabledState, "ON")
 
-	h.mqtt.Deliver(rf.MuteSet, "ON")
-	h.waitPayload(t, rf.MuteState, "ON")
+	h.mqtt.Deliver(rf.EnabledSet, "OFF")
+	h.waitPayload(t, rf.EnabledState, "OFF")
 	if v, _ := h.device(ampMain).Module("Hall L R", csp.AmpOutputMute); v != "O" {
-		t.Fatalf("device mute = %q", v)
+		t.Fatalf("device mute = %q, want muted", v)
 	}
-	h.mqtt.Deliver(rf.MuteSet, "OFF")
-	h.waitPayload(t, rf.MuteState, "OFF")
+	h.mqtt.Deliver(rf.EnabledSet, "ON")
+	h.waitPayload(t, rf.EnabledState, "ON")
+	if v, _ := h.device(ampMain).Module("Hall L R", csp.AmpOutputMute); v != "F" {
+		t.Fatalf("device mute = %q, want unmuted", v)
+	}
+}
+
+func TestPhantomCommandWritesInputIndexFive(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{})
+	h.start(t)
+	in := h.block(annexMic)
+	h.waitPayload(t, in.PhantomState, "ON")
+
+	h.mqtt.Deliver(in.PhantomSet, "OFF")
+	h.waitPayload(t, in.PhantomState, "OFF")
+	if v, _ := h.device(espAnnex).Module("Annex Mic", csp.InputPhantom); v != "F" {
+		t.Fatalf("device phantom = %q", v)
+	}
+	h.mqtt.Deliver(h.block(hallGain).PhantomSet, "ON")
+	eventually(t, func() bool { return h.logs.Contains("command_for_unknown_parameter") }, "phantom on a gain block rejected")
 }
 
 func TestOutOfRangeLevelIsRejectedWithoutContactingDevice(t *testing.T) {
@@ -169,31 +225,54 @@ func TestOutOfRangeLevelIsRejectedWithoutContactingDevice(t *testing.T) {
 	}
 }
 
-func TestParameterSetRecallGoesToMainDeviceAndUpdatesSensor(t *testing.T) {
+func TestParameterSetRecallReachesOnlyTheUnitsItWritesTo(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, harnessOptions{})
 	h.start(t)
-	main := mqttpkg.ForDevice(espMain)
+	main, annex := mqttpkg.ForDevice(espMain), mqttpkg.ForDevice(espAnnex)
 	h.waitPayload(t, main.ParameterSetState, "none")
+	h.waitPayload(t, annex.ParameterSetState, "none")
 
 	h.mqtt.Deliver(mqttpkg.ParameterSetPress(3), "PRESS")
-	h.waitPayload(t, main.ParameterSetState, "Rehearsal")
-	if h.device(espMain).ParameterSet() != 3 {
-		t.Fatalf("device parameter set = %d", h.device(espMain).ParameterSet())
+	h.waitPayload(t, annex.ParameterSetState, "Rehearsal")
+	h.waitPayload(t, annex.ParameterSetAttrs, `{"id":3}`)
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_recalled") }, "recall confirmed")
+	if h.device(espAnnex).ParameterSet() != 3 || h.device(espMain).ParameterSet() != 0 {
+		t.Fatalf("parameter sets: main=%d annex=%d", h.device(espMain).ParameterSet(), h.device(espAnnex).ParameterSet())
 	}
-	var attrs map[string]any
-	_ = json.Unmarshal([]byte(h.mqtt.LastPayload(main.ParameterSetAttrs)), &attrs)
-	if attrs["id"] != 3.0 {
-		t.Fatalf("attrs = %v", attrs)
+	if countCommands(h.device(espMain).Commands(), "SS")+countCommands(h.device(ampMain).Commands(), "SS") != 0 {
+		t.Fatal("SS must not reach units the set does not write to")
 	}
-	if !h.logs.Contains("parameter_set_recalled") {
-		t.Fatal("expected parameter_set_recalled")
+
+	h.mqtt.Deliver(mqttpkg.ParameterSetPress(2), "PRESS")
+	h.waitPayload(t, main.ParameterSetState, "Concert")
+	if h.mqtt.LastPayload(annex.ParameterSetState) != "Rehearsal" {
+		t.Fatal("each unit reports its own last recalled set")
 	}
 
 	h.mqtt.Deliver(mqttpkg.ParameterSetPress(9), "PRESS")
 	eventually(t, func() bool { return h.logs.Contains("parameter_set_unknown") }, "unknown set rejected")
-	if h.device(espAnnex).ParameterSet() != 0 || countCommands(h.device(espAnnex).Commands(), "SS") != 0 {
-		t.Fatal("SS must only be sent to the main device")
+}
+
+func TestParameterSetRecallWorksWhileMainDeviceIsOff(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{unreach: map[string]bool{espMain: true}})
+	h.start(t)
+	h.waitPayload(t, mqttpkg.ForDevice(espMain).Availability, "offline")
+	h.waitPayload(t, mqttpkg.ParameterSetButtonAvailability(3), "online")
+	h.waitPayload(t, mqttpkg.ParameterSetButtonAvailability(2), "offline")
+
+	h.mqtt.Deliver(mqttpkg.ParameterSetPress(3), "PRESS")
+	h.waitPayload(t, mqttpkg.ForDevice(espAnnex).ParameterSetState, "Rehearsal")
+	if h.device(espAnnex).ParameterSet() != 3 {
+		t.Fatalf("annex parameter set = %d", h.device(espAnnex).ParameterSet())
+	}
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_recalled") }, "recall confirmed")
+
+	h.mqtt.Deliver(mqttpkg.ParameterSetPress(2), "PRESS")
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_unreachable") }, "main-only set unreachable")
+	if h.mqtt.LastPayload(mqttpkg.ForDevice(espMain).ParameterSetState) != "" {
+		t.Fatal("an unreachable unit must not report a last recalled set")
 	}
 }
 
@@ -255,6 +334,7 @@ func TestRefusedParameterIsLoggedOnceAndSkipped(t *testing.T) {
 	h.device(espMain).SetModule("Hall", csp.GainLevel, "-3")
 	h.device(espMain).SetModule("Hall", csp.GainMute, "F")
 	h.waitPayload(t, h.block(hallGain).LevelState, "-3")
+	h.waitPayload(t, h.block(hallGain).EnabledState, "ON")
 	eventually(t, func() bool { return h.logs.Count("parameter_recovered") == 2 }, "recovery logged")
 }
 

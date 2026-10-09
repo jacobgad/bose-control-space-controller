@@ -28,9 +28,17 @@ const (
 	ControllerDesignState      = Prefix + "/controller/design/state"
 	ControllerDesignAttributes = Prefix + "/controller/design/attributes"
 
-	BlockLevelSetWildcard = Prefix + "/block/+/level/set"
-	BlockMuteSetWildcard  = Prefix + "/block/+/mute/set"
-	ParameterSetWildcard  = Prefix + "/parameter_set/+/press"
+	BlockLevelSetWildcard   = Prefix + "/block/+/level/set"
+	BlockEnabledSetWildcard = Prefix + "/block/+/enabled/set"
+	BlockPhantomSetWildcard = Prefix + "/block/+/phantom/set"
+	ParameterSetWildcard    = Prefix + "/parameter_set/+/press"
+)
+
+// Parameters a block command topic may name.
+const (
+	ParameterLevel   = "level"
+	ParameterEnabled = "enabled"
+	ParameterPhantom = "phantom"
 )
 
 // DeviceTopics are the per-physical-unit topics.
@@ -58,10 +66,10 @@ func ForDevice(nodeID string) DeviceTopics {
 type BlockTopics struct {
 	LevelState   string
 	LevelSet     string
-	MuteState    string
-	MuteSet      string
-	GainState    string
+	EnabledState string
+	EnabledSet   string
 	PhantomState string
+	PhantomSet   string
 }
 
 // ForBlock derives the topic set for a block nodeID.
@@ -70,16 +78,21 @@ func ForBlock(nodeID string) BlockTopics {
 	return BlockTopics{
 		LevelState:   base + "/level/state",
 		LevelSet:     base + "/level/set",
-		MuteState:    base + "/mute/state",
-		MuteSet:      base + "/mute/set",
-		GainState:    base + "/gain/state",
+		EnabledState: base + "/enabled/state",
+		EnabledSet:   base + "/enabled/set",
 		PhantomState: base + "/phantom/state",
+		PhantomSet:   base + "/phantom/set",
 	}
 }
 
 // ParameterSetPress is the command topic for recalling a parameter set.
 func ParameterSetPress(id int) string {
 	return Prefix + "/parameter_set/" + strconv.Itoa(id) + "/press"
+}
+
+// ParameterSetButtonAvailability goes offline when no device the set writes to is reachable.
+func ParameterSetButtonAvailability(id int) string {
+	return Prefix + "/parameter_set/" + strconv.Itoa(id) + "/availability"
 }
 
 // NodeID is the discovery node_id for any nodeID from the design.
@@ -98,11 +111,11 @@ func HADiscoveryTopic(component, nodeID, objectID string) string {
 }
 
 var (
-	blockCommandPattern        = regexp.MustCompile(`^` + Prefix + `/block/(\d+)/(level|mute)/set$`)
+	blockCommandPattern        = regexp.MustCompile(`^` + Prefix + `/block/(\d+)/(` + ParameterLevel + `|` + ParameterEnabled + `|` + ParameterPhantom + `)/set$`)
 	parameterSetCommandPattern = regexp.MustCompile(`^` + Prefix + `/parameter_set/(\d+)/press$`)
 )
 
-// BlockCommand is a parsed …/block/<nodeID>/(level|mute)/set topic.
+// BlockCommand is a parsed …/block/<nodeID>/<parameter>/set topic.
 type BlockCommand struct {
 	NodeID    string
 	Parameter string

@@ -240,7 +240,8 @@
             <Assign linkType="SNAPSHOT" targetType="Property" targetID="200001" targetProp="level" targetValue="3.0" />
         </ParameterSet>
         <ParameterSet id="3">
-            <Assign linkType="SNAPSHOT" targetType="Property" targetID="200001" targetProp="level" targetValue="-10.0" />
+            <Assign linkType="SNAPSHOT" targetType="Property" targetID="200004" targetProp="level" targetValue="-10.0" />
+            <Assign linkType="SNAPSHOT" targetType="Property" targetID="300004" targetProp="mute" targetValue="False" />
         </ParameterSet>
         <ParameterSet id="4" />
     </Assignment>
