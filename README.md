@@ -16,7 +16,7 @@ Or manually: **Settings → Add-ons → Add-on Store → ⋮ → Repositories**,
 Home Assistant ──MQTT──▶ Mosquitto ◀──MQTT── ControlSpace Controller ──TCP 10055──▶ ESP / PowerMatch
       │ ingress                                │
       └──────── upload .csp ───────────────────┤
-                                               ├─ parses the Designer .csp (devices, blocks, parameter sets)
+                                               ├─ parses the Designer .csp (devices, blocks, parameter sets, set lists)
                                                ├─ publishes MQTT Discovery, keyed on Designer node IDs
                                                ├─ polls every parameter; publishes on change
                                                └─ writes: debounce → SA → ACK → GA read-back → publish
@@ -37,6 +37,7 @@ Speaks the documented [ControlSpace Serial Control Protocol v5.13](https://asset
 | --- | --- |
 | `GA "Label">n` / `SA "Label">n=v` | read / write a module parameter (Gain 1,2 · Input 3,4,5 · Amp Output 1,2) |
 | `SS n` / `GS` | recall / query parameter set, sent to every unit the set writes to |
+| `SA "List">1=n` / `GA "List">2` | select / query a Parameter Set List position, sent to every unit its sets write to |
 
 Developed against the protocol document; **not yet validated on hardware**. Run with `log_level: debug` on first contact: every command and response is logged, so ACK framing and response formats can be checked against the emulator in `internal/testutil/fakedevice.go`.
 
@@ -66,7 +67,7 @@ bose-controlspace-controller/
 ├── main.go, app.go         wiring, modes, signals; app swaps the bridge on upload
 ├── config.yaml, Dockerfile add-on packaging
 └── internal/
-    ├── design/     .csp parser → devices, blocks, parameter sets; Store keeps the uploaded file
+    ├── design/     .csp parser → devices, blocks, parameter sets, set lists; Store keeps the uploaded file
     ├── webui/      ingress page: running design + upload
     ├── csp/        protocol: commands, response tokeniser, reconnecting client
     ├── bridge/     lifecycle · poll.go · write.go (debounce, set→ack→readback) · publish.go · manifest.go

@@ -31,6 +31,9 @@ const (
 
 	AmpOutputLevel = 1
 	AmpOutputMute  = 2
+
+	ParameterSetListSelect    = 1
+	ParameterSetListSelection = 2
 )
 
 // GetModule formats GA "Label">i1>i2.
@@ -80,6 +83,20 @@ func ParseLevel(s string) (float64, error) {
 		return 0, fmt.Errorf("csp: level %q: %w", s, err)
 	}
 	return v, nil
+}
+
+// FormatPosition renders a Parameter Set List position.
+func FormatPosition(n int) string {
+	return strconv.Itoa(n)
+}
+
+// ParsePosition reads a Parameter Set List position (0 = nothing selected).
+func ParsePosition(s string) (int, error) {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("csp: list position %q: not a non-negative integer", s)
+	}
+	return n, nil
 }
 
 // FormatOnOff renders a boolean as O/F.

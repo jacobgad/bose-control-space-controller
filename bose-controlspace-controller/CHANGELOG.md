@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- **Parameter Set Lists become selects.** Each list with members in the `.csp` is a `select` on the controller device, with its sets as options in list order. Choosing one sends the position in the list to every unit the list's sets write to (`SA "List">1=n`) and reads it back (`GA "List">2`); the select shows a member while all reachable units agree, else unknown. A unit that refuses the list is logged once (`parameter_set_list_refused`) and left out.
+
 ## 0.3.2
 
 - Inputs use the handheld mic icon (`mdi:microphone-variant`); gain blocks, being groups of mics, keep `mdi:microphone`.

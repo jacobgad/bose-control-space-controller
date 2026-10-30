@@ -184,6 +184,7 @@ button:hover{background:#0288d1}
 <dt>Loaded</dt><dd>{{when .LoadedAt}}</dd>
 <dt>Blocks</dt><dd>{{len .Design.Blocks}}{{if .Design.Skipped}} <span class="muted">({{len .Design.Skipped}} skipped, see log)</span>{{end}}</dd>
 <dt>Parameter sets</dt><dd>{{len .Design.ParameterSets}}</dd>
+<dt>Parameter set lists</dt><dd>{{len .Design.ParameterSetLists}}</dd>
 </dl>
 <table>
 <thead><tr><th>Device</th><th>Model</th><th>Address</th><th>Firmware</th></tr></thead>

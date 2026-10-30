@@ -647,6 +647,51 @@
         {
           "payload_available": "online",
           "payload_not_available": "offline",
+          "topic": "bose/parameter_set_list/1/availability"
+        }
+      ],
+      "availability_mode": "all",
+      "command_topic": "bose/parameter_set_list/1/set",
+      "device": {
+        "identifiers": [
+          "bose:controller"
+        ],
+        "manufacturer": "bose-controlspace-controller add-on",
+        "model": "ControlSpace MQTT bridge",
+        "name": "Bose ControlSpace Controller",
+        "sw_version": "test"
+      },
+      "icon": "mdi:format-list-bulleted",
+      "name": "Mode",
+      "object_id": "bose_controller_list_710001",
+      "optimistic": false,
+      "options": [
+        "Service",
+        "Rehearsal"
+      ],
+      "origin": {
+        "name": "Bose ControlSpace Controller",
+        "support_url": "https://example.invalid",
+        "sw_version": "test"
+      },
+      "qos": 1,
+      "retain": false,
+      "state_topic": "bose/parameter_set_list/1/state",
+      "unique_id": "bose_controller_list_710001"
+    },
+    "topic": "homeassistant/select/bose_controller/list_710001/config"
+  },
+  {
+    "payload": {
+      "availability": [
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
+          "topic": "bose/controller/availability"
+        },
+        {
+          "payload_available": "online",
+          "payload_not_available": "offline",
           "topic": "bose/device/100001/availability"
         }
       ],

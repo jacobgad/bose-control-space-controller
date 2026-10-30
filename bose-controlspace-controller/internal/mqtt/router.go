@@ -12,11 +12,12 @@ type Actions struct {
 	LevelCommand        func(nodeID string, db float64)
 	SwitchCommand       func(nodeID, parameter string, on bool)
 	RecallParameterSet  func(id int)
+	SelectListOption    func(id int, option string)
 	HomeAssistantOnline func()
 }
 
 // Subscriptions are the topics the bridge listens on.
-var Subscriptions = []string{BlockLevelSetWildcard, BlockEnabledSetWildcard, BlockPhantomSetWildcard, ParameterSetWildcard, HAStatusTopic}
+var Subscriptions = []string{BlockLevelSetWildcard, BlockEnabledSetWildcard, BlockPhantomSetWildcard, ParameterSetWildcard, ParameterSetListWildcard, HAStatusTopic}
 
 // ParseOnOffPayload accepts ON/OFF (case-insensitive) and true/false.
 func ParseOnOffPayload(payload string) (bool, bool) {
@@ -53,6 +54,10 @@ func NewRouter(actions Actions, log *slog.Logger) MessageHandler {
 		}
 		if id, ok := ParseParameterSetCommand(topic); ok {
 			actions.RecallParameterSet(id)
+			return
+		}
+		if id, ok := ParseParameterSetListCommand(topic); ok {
+			actions.SelectListOption(id, text)
 			return
 		}
 		if topic == HAStatusTopic {

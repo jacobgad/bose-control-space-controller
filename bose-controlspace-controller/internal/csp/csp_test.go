@@ -26,6 +26,8 @@ func TestCommandFormatting(t *testing.T) {
 		csp.FormatLevel(0):                                                     "0",
 		csp.FormatLevel(3):                                                     "3",
 		csp.SetModule("RF LF RM LM", csp.FormatLevel(-16), csp.AmpOutputLevel): `SA "RF LF RM LM">1=-16`,
+		csp.SetModule("PSet List 1", csp.FormatPosition(3), csp.ParameterSetListSelect): `SA "PSet List 1">1=3`,
+		csp.GetModule("PSet List 1", csp.ParameterSetListSelection):                     `GA "PSet List 1">2`,
 	}
 	for got, want := range cases {
 		if got != want {
@@ -67,6 +69,14 @@ func TestValueCodecs(t *testing.T) {
 	}
 	if _, err := csp.ParseOnOff("T"); err == nil {
 		t.Fatal("T must not parse as a state")
+	}
+	if n, err := csp.ParsePosition(" 2"); err != nil || n != 2 {
+		t.Fatalf("ParsePosition = %v, %v", n, err)
+	}
+	for _, bad := range []string{"-1", "x", ""} {
+		if _, err := csp.ParsePosition(bad); err == nil {
+			t.Fatalf("ParsePosition(%q) must fail", bad)
+		}
 	}
 }
 

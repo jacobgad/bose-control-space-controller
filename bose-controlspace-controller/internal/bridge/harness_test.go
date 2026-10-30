@@ -29,6 +29,7 @@ const (
 	annexMic    = "300004"
 	hallAmp     = "500001"
 	retiredGain = "200009"
+	modeList    = 1
 )
 
 var designPath = filepath.Join("..", "design", "testdata", "hall-v2.xml")
@@ -68,9 +69,10 @@ type harness struct {
 }
 
 type harnessOptions struct {
-	manifest *bridge.MemoryManifest
-	debounce time.Duration
-	unreach  map[string]bool
+	manifest    *bridge.MemoryManifest
+	debounce    time.Duration
+	unreach     map[string]bool
+	withoutList map[string]bool
 }
 
 func newHarness(t *testing.T, o harnessOptions) *harness {
@@ -98,6 +100,13 @@ func newHarness(t *testing.T, o harnessOptions) *harness {
 			seed(fake, blk)
 		}
 		h.devices[dev.NodeID] = fake
+	}
+	for _, l := range d.ParameterSetLists {
+		for _, nodeID := range l.Devices {
+			if !o.withoutList[nodeID] {
+				h.devices[nodeID].AddParameterSetList(l.Label, 0)
+			}
+		}
 	}
 	dial := func(ctx context.Context, address string) (net.Conn, error) {
 		for _, dev := range d.Devices {

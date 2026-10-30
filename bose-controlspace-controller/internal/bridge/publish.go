@@ -98,6 +98,15 @@ func (b *Bridge) publishRecallAvailability(ctx context.Context) {
 	for _, ps := range b.sets {
 		b.publishAvailability(ctx, mqtt.ParameterSetButtonAvailability(ps.ID), ps.reachable())
 	}
+	for _, l := range b.lists {
+		b.publishAvailability(ctx, l.topics.Availability, l.reachable())
+	}
+}
+
+func (b *Bridge) publishListState(ctx context.Context, l *parameterSetList) {
+	if state, settled := l.state(); settled {
+		b.publish(ctx, l.topics.State, state)
+	}
 }
 
 func (b *Bridge) publishDiscovery(ctx context.Context) error {

@@ -3,6 +3,7 @@ package mqtt
 import (
 	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/jacobgad/bose-control-space-controller/internal/design"
 )
@@ -37,6 +38,7 @@ const (
 	iconPhantom      = "mdi:flash"
 	iconParameterSet = "mdi:playlist-play"
 	iconLastRecalled = "mdi:playlist-check"
+	iconList         = "mdi:format-list-bulleted"
 	iconConnection   = "mdi:lan-connect"
 	iconDesign       = "mdi:file-cog"
 )
@@ -221,6 +223,51 @@ func ParameterSetMessages(d design.Design, o Origin) []Message {
 	return out
 }
 
+// ParameterSetListMessages lists one select per populated list on the controller,
+// for the same reason recall buttons live there.
+func ParameterSetListMessages(d design.Design, o Origin) []Message {
+	controller := ControllerDevice(o)
+	out := make([]Message, 0, len(d.ParameterSetLists))
+	for _, l := range d.ParameterSetLists {
+		topics := ForParameterSetList(l.ID)
+		out = append(out, Build(Entity{
+			Component: "select", NodeID: "controller", Object: "list_" + l.NodeID, Name: l.Label, Icon: iconList,
+			Device: controller, Availability: topics.Availability,
+			Fields: map[string]any{
+				"state_topic":   topics.State,
+				"command_topic": topics.Set,
+				"options":       ListOptions(l),
+				"optimistic":    false,
+				"retain":        false,
+				"qos":           1,
+			},
+		}, o))
+	}
+	return out
+}
+
+// ListOptions are the select's options in list order. Home Assistant needs them
+// distinct and reads "none" as no selection, so those and blanks get the position.
+func ListOptions(l design.ParameterSetList) []string {
+	out := make([]string, 0, len(l.Members))
+	used := make(map[string]bool, len(l.Members))
+	for i, m := range l.Members {
+		label := strings.TrimSpace(m.Label)
+		switch {
+		case label == "" && m.SetID > 0:
+			label = "Parameter set " + strconv.Itoa(m.SetID)
+		case label == "":
+			label = "Entry " + strconv.Itoa(i+1)
+		}
+		if used[label] || strings.EqualFold(label, PayloadNone) {
+			label += " (" + strconv.Itoa(i+1) + ")"
+		}
+		used[label] = true
+		out = append(out, label)
+	}
+	return out
+}
+
 // ControllerMessages lists the bridge device's entities.
 func ControllerMessages(devices []design.Device, o Origin) []Message {
 	out := make([]Message, 0, 1+len(devices))
@@ -258,6 +305,7 @@ func DesignMessages(d design.Design, o Origin) []Message {
 		out = append(out, BlockMessages(b, dev, o)...)
 	}
 	out = append(out, ParameterSetMessages(d, o)...)
+	out = append(out, ParameterSetListMessages(d, o)...)
 	return out
 }
 

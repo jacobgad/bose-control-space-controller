@@ -194,6 +194,26 @@
             </Properties>
         </Node>
     </Nodes>
+    <ParameterSetLists>
+        <PanelList id="1">
+            <Properties>
+                <Property name="title" value="PSet List" />
+                <Property name="label" value="Mode" />
+                <Property name="index" value="1" />
+                <Property name="selection" value="2" />
+                <Property name="nodeID" value="710001" />
+            </Properties>
+        </PanelList>
+        <PanelList id="2">
+            <Properties>
+                <Property name="title" value="PSet List" />
+                <Property name="label" value="Spare" />
+                <Property name="index" value="2" />
+                <Property name="selection" value="0" />
+                <Property name="nodeID" value="710002" />
+            </Properties>
+        </PanelList>
+    </ParameterSetLists>
     <ParameterSets>
         <ParameterSet id="1">
             <Properties>
@@ -244,5 +264,9 @@
             <Assign linkType="SNAPSHOT" targetType="Property" targetID="300004" targetProp="mute" targetValue="False" />
         </ParameterSet>
         <ParameterSet id="4" />
+        <PanelList id="1">
+            <Assign linkType="SNAPSHOT" targetType="ParameterSet" targetID="1" />
+            <Assign linkType="SNAPSHOT" targetType="ParameterSet" targetID="3" />
+        </PanelList>
     </Assignment>
 </Project>

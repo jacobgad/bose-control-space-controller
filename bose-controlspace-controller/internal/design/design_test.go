@@ -128,6 +128,51 @@ func TestOnlyPopulatedParameterSetsAreExposed(t *testing.T) {
 	}
 }
 
+func TestOnlyPopulatedParameterSetListsAreExposed(t *testing.T) {
+	t.Parallel()
+	d := load(t, currentFixture)
+
+	want := []design.ParameterSetList{{
+		ID: 1, NodeID: "710001", Label: "Mode",
+		Members: []design.ListMember{{SetID: 1, Label: "Service"}, {SetID: 3, Label: "Rehearsal"}},
+		Devices: []string{"100001", "100002"},
+	}}
+	if !reflect.DeepEqual(d.ParameterSetLists, want) {
+		t.Fatalf("parameter set lists = %+v, want %+v", d.ParameterSetLists, want)
+	}
+}
+
+func TestParameterSetListKeepsEveryEntrySoPositionsMatchTheDevice(t *testing.T) {
+	t.Parallel()
+	d, err := design.Parse(strings.NewReader(project(``, `
+		<ParameterSetLists><PanelList id="4"><Properties>
+			<Property name="label" value="Scenes" /><Property name="nodeID" value="000050" /></Properties></PanelList></ParameterSetLists>
+		<ParameterSets>
+			<ParameterSet id="1"><Properties><Property name="label" value="Empty" /><Property name="nodeID" value="000040" /></Properties></ParameterSet>
+			<ParameterSet id="2"><Properties><Property name="label" value="Standby" /><Property name="nodeID" value="000041" /></Properties></ParameterSet>
+		</ParameterSets>
+		<Assignment>
+			<ParameterSet id="2"><Assign linkType="SNAPSHOT" targetType="Property" targetID="000001" targetProp="standby" targetValue="True" /></ParameterSet>
+			<PanelList id="4">
+				<Assign linkType="SNAPSHOT" targetType="ParameterSet" targetID="1" />
+				<Assign linkType="SNAPSHOT" targetType="ParameterSet" targetID="2" />
+				<Assign linkType="SNAPSHOT" targetType="ParameterSet" targetID="9" />
+				<Assign linkType="SNAPSHOT" targetType="ParameterSet" targetID="x" />
+			</PanelList>
+		</Assignment>`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []design.ParameterSetList{{
+		ID: 4, NodeID: "000050", Label: "Scenes",
+		Members: []design.ListMember{{SetID: 1, Label: "Empty"}, {SetID: 2, Label: "Standby"}, {SetID: 9}, {}},
+		Devices: []string{"000001"},
+	}}
+	if !reflect.DeepEqual(d.ParameterSetLists, want) {
+		t.Fatalf("parameter set lists = %+v, want %+v", d.ParameterSetLists, want)
+	}
+}
+
 func TestParameterSetSpanningDevicesListsEachOnce(t *testing.T) {
 	t.Parallel()
 	d, err := design.Parse(strings.NewReader(`<?xml version="1.0"?><Project version="5.900" createdBy="test"><Nodes>

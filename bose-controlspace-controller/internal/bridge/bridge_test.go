@@ -21,8 +21,8 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 		t.Fatal("controller availability not online")
 	}
 	configs := h.mqtt.DiscoveryConfigs()
-	const gains, inputs, ampOutputs, buttons, lastRecalled, designSensor, connections = 4, 4, 3, 3, 2, 1, 4
-	if want := gains*2 + inputs*3 + ampOutputs*2 + buttons + lastRecalled + designSensor + connections; len(configs) != want {
+	const gains, inputs, ampOutputs, buttons, lastRecalled, lists, designSensor, connections = 4, 4, 3, 3, 2, 1, 1, 4
+	if want := gains*2 + inputs*3 + ampOutputs*2 + buttons + lastRecalled + lists + designSensor + connections; len(configs) != want {
 		t.Fatalf("discovery configs = %d, want %d", len(configs), want)
 	}
 	level := configs["homeassistant/number/bose_"+hallGain+"/level/config"]
@@ -79,6 +79,24 @@ func TestStartupPublishesAvailabilityDiscoveryAndDesign(t *testing.T) {
 	}
 	if _, ok := configs["homeassistant/sensor/bose_"+ampMain+"/last_parameter_set/config"]; ok {
 		t.Fatal("units no set writes to must not get a last recalled sensor")
+	}
+	mode := configs["homeassistant/select/bose_controller/list_710001/config"]
+	if mode == nil || mode["name"] != "Mode" || mode["command_topic"] != mqttpkg.ForParameterSetList(modeList).Set {
+		t.Fatalf("Mode list select = %v", mode)
+	}
+	if options, _ := mode["options"].([]any); len(options) != 2 || options[0] != "Service" || options[1] != "Rehearsal" {
+		t.Fatalf("Mode list options = %v", mode["options"])
+	}
+	if dev := mode["device"].(map[string]any); dev["identifiers"].([]any)[0] != mqttpkg.ControllerIdentifier {
+		t.Fatalf("Mode list device = %v", dev)
+	}
+	if topics := availabilityTopics(mode); len(topics) != 2 || topics[1] != mqttpkg.ForParameterSetList(modeList).Availability {
+		t.Fatalf("Mode list availability = %v", topics)
+	}
+	for topic := range configs {
+		if strings.Contains(topic, "710002") {
+			t.Fatal("an empty list must not be exposed")
+		}
 	}
 	if _, ok := configs["homeassistant/sensor/bose_controller/connection_"+espAnnex+"/config"]; !ok {
 		t.Fatal("missing ESP Annex connection sensor")
@@ -285,6 +303,108 @@ func TestParameterSetRecallWorksWhileMainDeviceIsOff(t *testing.T) {
 	eventually(t, func() bool { return h.logs.Contains("parameter_set_unreachable") }, "main-only set unreachable")
 	if h.mqtt.LastPayload(mqttpkg.ForDevice(espMain).ParameterSetState) != "" {
 		t.Fatal("an unreachable unit must not report a last recalled set")
+	}
+}
+
+func TestListShowsTheMemberOnlyWhileItsUnitsAgree(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{})
+	h.start(t)
+	mode := mqttpkg.ForParameterSetList(modeList)
+	h.waitPayload(t, mode.State, "none")
+	h.waitPayload(t, mode.Availability, "online")
+
+	h.device(espMain).SetModule("Mode", csp.ParameterSetListSelection, "2")
+	h.device(espAnnex).SetModule("Mode", csp.ParameterSetListSelection, "2")
+	h.waitPayload(t, mode.State, "Rehearsal")
+
+	h.device(espMain).SetModule("Mode", csp.ParameterSetListSelection, "1")
+	h.waitPayload(t, mode.State, "none")
+	if countCommands(h.device(ampMain).Commands(), `GA "Mode"`) != 0 {
+		t.Fatal("units the list's sets do not write to must not be polled for it")
+	}
+}
+
+func TestListSelectSendsThePositionToEveryUnitItsSetsWriteTo(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{})
+	h.start(t)
+	mode := mqttpkg.ForParameterSetList(modeList)
+	h.waitPayload(t, mode.State, "none")
+
+	h.device(espMain).SetModule("Mode", csp.ParameterSetListSelection, "1")
+	h.device(espAnnex).SetModule("Mode", csp.ParameterSetListSelection, "1")
+	h.waitPayload(t, mode.State, "Service")
+	h.mqtt.Clear()
+
+	h.mqtt.Deliver(mode.Set, "Rehearsal")
+	h.waitPayload(t, mode.State, "Rehearsal")
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_list_selected") }, "select confirmed")
+	for _, payload := range h.mqtt.PayloadsOn(mode.State) {
+		if payload == "none" {
+			t.Fatal("units disagreeing mid-selection must not publish none")
+		}
+	}
+	for _, nodeID := range []string{espMain, espAnnex} {
+		if countCommands(h.device(nodeID).Commands(), `SA "Mode">1=2`) != 1 {
+			t.Fatalf("%s commands = %v", nodeID, h.device(nodeID).Commands())
+		}
+	}
+	if countCommands(h.device(ampMain).Commands(), "SA") != 0 {
+		t.Fatal("select must not reach units the list's sets do not write to")
+	}
+
+	h.mqtt.Deliver(mode.Set, "Concert")
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_list_option_unknown") }, "unknown option rejected")
+}
+
+func TestListSelectWorksWhileMainDeviceIsOff(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{unreach: map[string]bool{espMain: true}})
+	h.start(t)
+	mode := mqttpkg.ForParameterSetList(modeList)
+	h.waitPayload(t, mqttpkg.ForDevice(espMain).Availability, "offline")
+	h.waitPayload(t, mode.Availability, "online")
+
+	h.mqtt.Deliver(mode.Set, "Service")
+	h.waitPayload(t, mode.State, "Service")
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_list_partial") }, "partial select logged")
+}
+
+func TestUnitRefusingTheListIsLoggedOnceAndLeftOutOfAgreement(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{withoutList: map[string]bool{espMain: true}})
+	h.start(t)
+	mode := mqttpkg.ForParameterSetList(modeList)
+	h.device(espAnnex).SetModule("Mode", csp.ParameterSetListSelection, "1")
+	h.waitPayload(t, mode.State, "Service")
+
+	h.waitPayload(t, h.block(hallGain).LevelState, "-2")
+	time.Sleep(100 * time.Millisecond)
+	if n := h.logs.Count("parameter_set_list_refused"); n != 1 {
+		t.Fatalf("parameter_set_list_refused logged %d times, want once", n)
+	}
+
+	h.mqtt.Deliver(mode.Set, "Rehearsal")
+	h.waitPayload(t, mode.State, "Rehearsal")
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_list_selected") }, "select confirmed on the hosting unit")
+	if countCommands(h.device(espMain).Commands(), `SA "Mode"`) != 0 || h.logs.Contains("parameter_set_list_partial") {
+		t.Fatal("a unit known to refuse the list must not be sent selections")
+	}
+}
+
+func TestListIsUnavailableWhenOnlyRefusingUnitsAreReachable(t *testing.T) {
+	t.Parallel()
+	h := newHarness(t, harnessOptions{withoutList: map[string]bool{espMain: true}, unreach: map[string]bool{espAnnex: true}})
+	h.start(t)
+	mode := mqttpkg.ForParameterSetList(modeList)
+	h.waitPayload(t, mqttpkg.ForDevice(espMain).Availability, "online")
+	h.waitPayload(t, mode.Availability, "offline")
+
+	h.mqtt.Deliver(mode.Set, "Service")
+	eventually(t, func() bool { return h.logs.Contains("parameter_set_list_unreachable") }, "select with no reachable host logged")
+	if countCommands(h.device(espMain).Commands(), `SA "Mode"`) != 0 {
+		t.Fatal("a unit known to refuse the list must not be sent selections")
 	}
 }
 

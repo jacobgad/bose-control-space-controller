@@ -79,15 +79,32 @@ type ParameterSet struct {
 	Devices []string
 }
 
+// ParameterSetList is a populated Parameter Set List. The device selects by 1-based
+// position in Members, so every entry is kept; one naming no known set has SetID 0.
+type ParameterSetList struct {
+	ID      int
+	NodeID  string
+	Label   string
+	Members []ListMember
+	Devices []string
+}
+
+// ListMember is one entry of a Parameter Set List.
+type ListMember struct {
+	SetID int
+	Label string
+}
+
 // Design is the parsed project.
 type Design struct {
-	Version       string
-	CreatedBy     string
-	Key           string
-	Devices       []Device
-	Blocks        []Block
-	ParameterSets []ParameterSet
-	Skipped       []Skipped
+	Version           string
+	CreatedBy         string
+	Key               string
+	Devices           []Device
+	Blocks            []Block
+	ParameterSets     []ParameterSet
+	ParameterSetLists []ParameterSetList
+	Skipped           []Skipped
 }
 
 // Skipped records a block left out of the design and why.
@@ -172,12 +189,22 @@ type xmlAssignmentSet struct {
 }
 
 type xmlProject struct {
-	Version       string             `xml:"version,attr"`
-	CreatedBy     string             `xml:"createdBy,attr"`
-	Key           string             `xml:"key,attr"`
-	Nodes         []xmlNode          `xml:"Nodes>Node"`
-	ParameterSets []xmlParameterSet  `xml:"ParameterSets>ParameterSet"`
-	Assignments   []xmlAssignmentSet `xml:"Assignment>ParameterSet"`
+	Version           string             `xml:"version,attr"`
+	CreatedBy         string             `xml:"createdBy,attr"`
+	Key               string             `xml:"key,attr"`
+	Nodes             []xmlNode          `xml:"Nodes>Node"`
+	ParameterSets     []xmlParameterSet  `xml:"ParameterSets>ParameterSet"`
+	ParameterSetLists []xmlParameterSet  `xml:"ParameterSetLists>PanelList"`
+	Assignments       []xmlAssignmentSet `xml:"Assignment>ParameterSet"`
+	ListAssignments   []xmlAssignmentSet `xml:"Assignment>PanelList"`
+}
+
+func (ps xmlParameterSet) props() properties {
+	out := make(properties, len(ps.Properties))
+	for _, p := range ps.Properties {
+		out[p.Name] = p
+	}
+	return out
 }
 
 type properties map[string]xmlProperty
@@ -266,6 +293,7 @@ func Parse(r io.Reader) (Design, error) {
 	}
 
 	d.ParameterSets = parseParameterSets(project, d.Devices)
+	d.ParameterSetLists = parseParameterSetLists(project, d.ParameterSets, d.Devices)
 	return d, nil
 }
 
@@ -367,11 +395,52 @@ func parseParameterSets(project xmlProject, devices []Device) []ParameterSet {
 		if !populated {
 			continue
 		}
-		p := properties{}
-		for _, prop := range ps.Properties {
-			p[prop.Name] = prop
-		}
+		p := ps.props()
 		out = append(out, ParameterSet{ID: ps.ID, NodeID: p.value("nodeID"), Label: p.value("label"), Devices: devices})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+func parseParameterSetLists(project xmlProject, populated []ParameterSet, devices []Device) []ParameterSetList {
+	setLabels := make(map[int]string, len(project.ParameterSets))
+	for _, ps := range project.ParameterSets {
+		setLabels[ps.ID] = ps.props().value("label")
+	}
+	setDevices := make(map[int][]string, len(populated))
+	for _, ps := range populated {
+		setDevices[ps.ID] = ps.Devices
+	}
+	membersByList := make(map[int][]ListMember)
+	for _, a := range project.ListAssignments {
+		for _, assign := range a.Assigns {
+			var member ListMember
+			if id, err := strconv.Atoi(assign.TargetID); err == nil && assign.TargetType == "ParameterSet" {
+				member = ListMember{SetID: id, Label: setLabels[id]}
+			}
+			membersByList[a.ID] = append(membersByList[a.ID], member)
+		}
+	}
+	var out []ParameterSetList
+	for _, l := range project.ParameterSetLists {
+		members := membersByList[l.ID]
+		if len(members) == 0 {
+			continue
+		}
+		involved := make(map[string]bool)
+		for _, m := range members {
+			for _, dev := range setDevices[m.SetID] {
+				involved[dev] = true
+			}
+		}
+		var targets []string
+		for _, dev := range devices {
+			if involved[dev.NodeID] {
+				targets = append(targets, dev.NodeID)
+			}
+		}
+		p := l.props()
+		out = append(out, ParameterSetList{ID: l.ID, NodeID: p.value("nodeID"), Label: p.value("label"), Members: members, Devices: targets})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
 	return out

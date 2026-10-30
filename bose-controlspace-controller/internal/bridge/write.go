@@ -2,7 +2,9 @@ package bridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -120,31 +122,76 @@ func (b *Bridge) RecallParameterSet(id int) {
 		b.log.Warn("parameter_set_no_target_device", "id", id, "label", set.Label)
 		return
 	}
+	b.fanOut(b.log.With("id", id, "label", set.Label), set.targets, fanOutEvents{
+		failed: "parameter_set_recall_failed", unreachable: "parameter_set_unreachable", partial: "parameter_set_partial", done: "parameter_set_recalled",
+	}, func(ctx context.Context, u *unit) error { return b.recallOn(ctx, u, id) }, nil)
+}
+
+// SelectListOption selects a member of a Parameter Set List on every unit its sets
+// write to, like a recall.
+func (b *Bridge) SelectListOption(id int, option string) {
+	l, ok := b.lists[id]
+	if !ok {
+		b.log.Warn("parameter_set_list_unknown", "id", id)
+		return
+	}
+	position, ok := l.position(option)
+	if !ok {
+		b.log.Warn("parameter_set_list_option_unknown", "id", id, "label", l.Label, "option", option)
+		return
+	}
+	if len(l.targets) == 0 {
+		b.log.Warn("parameter_set_list_no_target_device", "id", id, "label", l.Label)
+		return
+	}
+	log := b.log.With("id", id, "label", l.Label, "option", option, "position", position)
+	hosts := l.hosts()
+	if len(hosts) == 0 {
+		log.Warn("parameter_set_list_unhosted")
+		return
+	}
+	l.beginSelect()
+	b.fanOut(log, hosts, fanOutEvents{
+		failed: "parameter_set_list_select_failed", unreachable: "parameter_set_list_unreachable", partial: "parameter_set_list_partial", done: "parameter_set_list_selected",
+	}, func(ctx context.Context, u *unit) error { return b.selectOn(ctx, u, l, position) }, func(ctx context.Context) {
+		l.endSelect()
+		b.publishListState(ctx, l)
+	})
+}
+
+type fanOutEvents struct {
+	failed, unreachable, partial, done string
+}
+
+// finish runs even when the bridge is stopping, so callers can release state there.
+func (b *Bridge) fanOut(log *slog.Logger, targets []*unit, events fanOutEvents, apply func(context.Context, *unit) error, finish func(context.Context)) {
 	b.wg.Add(1)
 	go func() {
 		defer b.wg.Done()
+		ctx, cancel := context.WithTimeout(b.ctx, 10*time.Second)
+		defer cancel()
+		if finish != nil {
+			defer finish(ctx)
+		}
 		if b.ctx.Err() != nil {
 			return
 		}
-		ctx, cancel := context.WithTimeout(b.ctx, 10*time.Second)
-		defer cancel()
-		log := b.log.With("id", id, "label", set.Label)
 
-		results := make([]error, len(set.targets))
+		results := make([]error, len(targets))
 		var wg sync.WaitGroup
-		for i, u := range set.targets {
+		for i, u := range targets {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				results[i] = b.recallOn(ctx, u, id)
+				results[i] = apply(ctx, u)
 			}()
 		}
 		wg.Wait()
 
 		var reached, missed []string
-		for i, u := range set.targets {
+		for i, u := range targets {
 			if results[i] != nil {
-				log.Warn("parameter_set_recall_failed", "device", u.Label, "error", results[i].Error())
+				log.Warn(events.failed, "device", u.Label, "error", results[i].Error())
 				missed = append(missed, u.Label)
 				continue
 			}
@@ -152,13 +199,34 @@ func (b *Bridge) RecallParameterSet(id int) {
 		}
 		switch {
 		case len(reached) == 0:
-			log.Warn("parameter_set_unreachable", "devices", missed)
+			log.Warn(events.unreachable, "devices", missed)
 		case len(missed) > 0:
-			log.Warn("parameter_set_partial", "reached", reached, "missed", missed)
+			log.Warn(events.partial, "reached", reached, "missed", missed)
 		default:
-			log.Info("parameter_set_recalled", "devices", reached)
+			log.Info(events.done, "devices", reached)
 		}
 	}()
+}
+
+func (b *Bridge) selectOn(ctx context.Context, u *unit, l *parameterSetList, position int) error {
+	if err := u.client.Set(ctx, l.Label, csp.FormatPosition(position), csp.ParameterSetListSelect); err != nil {
+		var nak *csp.NAKError
+		if errors.As(err, &nak) {
+			b.listRefused(ctx, u, l, err)
+		}
+		return err
+	}
+	if err := b.readListSelection(ctx, u, l); err != nil {
+		return fmt.Errorf("readback: %w", err)
+	}
+	got, ok := l.reading(u)
+	if !ok {
+		return errors.New("readback refused or unparseable")
+	}
+	if got != position {
+		return fmt.Errorf("device reports position %d", got)
+	}
+	return nil
 }
 
 func (b *Bridge) recallOn(ctx context.Context, u *unit, id int) error {

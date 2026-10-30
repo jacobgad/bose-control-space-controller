@@ -108,6 +108,11 @@ func (b *Bridge) pollUnit(u *unit) {
 			return
 		}
 	}
+	for _, l := range u.lists {
+		if err := b.readListSelection(ctx, u, l); err != nil {
+			return
+		}
+	}
 }
 
 func (b *Bridge) readParameter(ctx context.Context, bl *block, p parameter) error {
@@ -138,21 +143,57 @@ func (b *Bridge) readLastRecalled(ctx context.Context, u *unit) (int, error) {
 	return id, nil
 }
 
-func (bl *block) failOnce(b *Bridge, param, event string, err error) {
-	bl.mu.Lock()
-	defer bl.mu.Unlock()
-	if bl.failed[param] {
-		return
+// readListSelection returns only transport errors, like the other reads; a unit that
+// refuses or garbles the list is logged once and has no reading.
+func (b *Bridge) readListSelection(ctx context.Context, u *unit, l *parameterSetList) error {
+	raw, err := u.client.Get(ctx, l.Label, csp.ParameterSetListSelection)
+	var nak *csp.NAKError
+	switch {
+	case errors.As(err, &nak):
+		b.listRefused(ctx, u, l, err)
+		return nil
+	case err != nil:
+		return err
 	}
-	bl.failed[param] = true
-	b.log.Warn(event, "device", bl.unit.Label, "label", bl.Label, "node_id", bl.NodeID, "parameter", param, "error", err.Error())
+	position, err := csp.ParsePosition(raw)
+	if err != nil {
+		l.failOnce(b, u, "parameter_set_list_unparseable", err)
+		l.forget(u)
+	} else {
+		l.recovered(b, u)
+		l.record(u, position)
+	}
+	b.publishListState(ctx, l)
+	return nil
+}
+
+func (b *Bridge) listRefused(ctx context.Context, u *unit, l *parameterSetList, err error) {
+	l.failOnce(b, u, "parameter_set_list_refused", err)
+	l.refuse(u)
+	b.publishListState(ctx, l)
+	b.publishAvailability(ctx, l.topics.Availability, l.reachable())
+}
+
+func (l *parameterSetList) failOnce(b *Bridge, u *unit, event string, err error) {
+	if l.failed.first(u.NodeID) {
+		b.log.Warn(event, "device", u.Label, "label", l.Label, "node_id", l.NodeID, "error", err.Error())
+	}
+}
+
+func (l *parameterSetList) recovered(b *Bridge, u *unit) {
+	if l.failed.cleared(u.NodeID) {
+		b.log.Info("parameter_set_list_recovered", "device", u.Label, "label", l.Label)
+	}
+}
+
+func (bl *block) failOnce(b *Bridge, param, event string, err error) {
+	if bl.failed.first(param) {
+		b.log.Warn(event, "device", bl.unit.Label, "label", bl.Label, "node_id", bl.NodeID, "parameter", param, "error", err.Error())
+	}
 }
 
 func (bl *block) recovered(b *Bridge, param string) {
-	bl.mu.Lock()
-	defer bl.mu.Unlock()
-	if bl.failed[param] {
-		delete(bl.failed, param)
+	if bl.failed.cleared(param) {
 		b.log.Info("parameter_recovered", "device", bl.unit.Label, "label", bl.Label, "parameter", param)
 	}
 }

@@ -17,6 +17,7 @@ import (
 type FakeDevice struct {
 	mu           sync.Mutex
 	modules      map[string]map[int]string
+	lists        map[string]bool
 	parameterSet int
 	commands     []string
 	conns        []net.Conn
@@ -30,7 +31,15 @@ type FakeDevice struct {
 }
 
 func NewFakeDevice() *FakeDevice {
-	return &FakeDevice{modules: make(map[string]map[int]string)}
+	return &FakeDevice{modules: make(map[string]map[int]string), lists: make(map[string]bool)}
+}
+
+func (d *FakeDevice) AddParameterSetList(label string, position int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	v := strconv.Itoa(position)
+	d.modules[label] = map[int]string{csp.ParameterSetListSelect: v, csp.ParameterSetListSelection: v}
+	d.lists[label] = true
 }
 
 func (d *FakeDevice) SetSilent(silent bool) {
@@ -187,6 +196,9 @@ func (d *FakeDevice) handle(cmd string) string {
 			}
 		}
 		module[index] = value
+		if d.lists[label] && index == csp.ParameterSetListSelect {
+			module[csp.ParameterSetListSelection] = value
+		}
 		return string(rune(csp.ACK)) + d.ACKTerminator
 	}
 	return ""

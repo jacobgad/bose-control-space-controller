@@ -28,10 +28,11 @@ const (
 	ControllerDesignState      = Prefix + "/controller/design/state"
 	ControllerDesignAttributes = Prefix + "/controller/design/attributes"
 
-	BlockLevelSetWildcard   = Prefix + "/block/+/level/set"
-	BlockEnabledSetWildcard = Prefix + "/block/+/enabled/set"
-	BlockPhantomSetWildcard = Prefix + "/block/+/phantom/set"
-	ParameterSetWildcard    = Prefix + "/parameter_set/+/press"
+	BlockLevelSetWildcard    = Prefix + "/block/+/level/set"
+	BlockEnabledSetWildcard  = Prefix + "/block/+/enabled/set"
+	BlockPhantomSetWildcard  = Prefix + "/block/+/phantom/set"
+	ParameterSetWildcard     = Prefix + "/parameter_set/+/press"
+	ParameterSetListWildcard = Prefix + "/parameter_set_list/+/set"
 )
 
 // Parameters a block command topic may name.
@@ -95,6 +96,23 @@ func ParameterSetButtonAvailability(id int) string {
 	return Prefix + "/parameter_set/" + strconv.Itoa(id) + "/availability"
 }
 
+// ParameterSetListTopics are the per-list topics.
+type ParameterSetListTopics struct {
+	State        string
+	Set          string
+	Availability string
+}
+
+// ForParameterSetList derives the topic set for a Parameter Set List.
+func ForParameterSetList(id int) ParameterSetListTopics {
+	base := Prefix + "/parameter_set_list/" + strconv.Itoa(id)
+	return ParameterSetListTopics{
+		State:        base + "/state",
+		Set:          base + "/set",
+		Availability: base + "/availability",
+	}
+}
+
 // NodeID is the discovery node_id for any nodeID from the design.
 func NodeID(nodeID string) string {
 	return Prefix + "_" + nodeID
@@ -113,6 +131,7 @@ func HADiscoveryTopic(component, nodeID, objectID string) string {
 var (
 	blockCommandPattern        = regexp.MustCompile(`^` + Prefix + `/block/(\d+)/(` + ParameterLevel + `|` + ParameterEnabled + `|` + ParameterPhantom + `)/set$`)
 	parameterSetCommandPattern = regexp.MustCompile(`^` + Prefix + `/parameter_set/(\d+)/press$`)
+	listCommandPattern         = regexp.MustCompile(`^` + Prefix + `/parameter_set_list/(\d+)/set$`)
 )
 
 // BlockCommand is a parsed …/block/<nodeID>/<parameter>/set topic.
@@ -132,7 +151,16 @@ func ParseBlockCommand(topic string) (BlockCommand, bool) {
 
 // ParseParameterSetCommand recognises parameter set press topics.
 func ParseParameterSetCommand(topic string) (int, bool) {
-	m := parameterSetCommandPattern.FindStringSubmatch(topic)
+	return parseIDTopic(parameterSetCommandPattern, topic)
+}
+
+// ParseParameterSetListCommand recognises Parameter Set List select topics.
+func ParseParameterSetListCommand(topic string) (int, bool) {
+	return parseIDTopic(listCommandPattern, topic)
+}
+
+func parseIDTopic(pattern *regexp.Regexp, topic string) (int, bool) {
+	m := pattern.FindStringSubmatch(topic)
 	if m == nil {
 		return 0, false
 	}
